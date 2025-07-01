@@ -510,4 +510,14 @@ export function BriefBuilderWizard({ onClose }: BriefBuilderWizardProps) {
                     label="Anything else you'd like to share with us?"
                     value={briefData.finalNotes}
                     onChange={(value) => updateBriefData("finalNotes", value)}
-                    placeholder="Any additional\
+                    placeholder="Any additional notes or comments you'd like to share with us?"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  )
+}
