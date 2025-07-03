@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
+import { useEffect, useState } from 'react';
 
 import { cn } from "@/lib/utils"
 
@@ -190,6 +191,11 @@ const ChartTooltipContent = React.forwardRef<
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
             const indicatorColor = color || item.payload.fill || item.color
 
+            const [formattedValue, setFormattedValue] = useState<string>("");
+            useEffect(() => {
+              setFormattedValue(item.value.toLocaleString());
+            }, [item.value]);
+
             return (
               <div
                 key={item.dataKey}
@@ -240,7 +246,7 @@ const ChartTooltipContent = React.forwardRef<
                       </div>
                       {item.value && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
+                          {formattedValue}
                         </span>
                       )}
                     </div>

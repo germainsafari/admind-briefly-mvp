@@ -64,14 +64,19 @@ export function ShareBriefModalEnhanced({ open, onOpenChange, onSubmit }: ShareB
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md card-bg">
+      <DialogContent
+        className="max-w-md card-bg"
+        aria-labelledby="share-brief-enhanced-title"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl text-text">Choose who you'd like to send this brief to</DialogTitle>
+            <DialogTitle id="share-brief-enhanced-title" className="text-xl text-text">Choose who you'd like to send this brief to</DialogTitle>
             <Button variant="ghost" size="sm" className="text-text-muted">
               <Edit2 className="h-4 w-4" />
             </Button>
           </div>
+          <p id="share-brief-enhanced-desc" className="text-gray-600 mt-2">Select a contact or enter an email to send the brief.</p>
         </DialogHeader>
 
         <div className="space-y-6 mt-6">

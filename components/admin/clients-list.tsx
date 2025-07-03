@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,59 +16,13 @@ interface Client {
   status: "active" | "invited" | "deactivated"
 }
 
-const mockClients: Client[] = [
-  {
-    id: "1",
-    name: "Beyonce Knowles",
-    title: "Singer and Sonwriter",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "Hitachi",
-    status: "invited",
-  },
-  {
-    id: "2",
-    name: "Max Johnson",
-    title: "Senior Lorem Ipsum Position",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "ABB",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Daniel Wellington",
-    title: "Junior Watch Manufacturer",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "ABB",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "Sean Paul",
-    title: "Singer & Songwriter",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "ABB",
-    status: "active",
-  },
-  {
-    id: "5",
-    name: "Kun Fu Panda",
-    title: "Fighter",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "Hitachi",
-    status: "deactivated",
-  },
-  {
-    id: "6",
-    name: "Lara Croft",
-    title: "Senior Archaeologist",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "UBS",
-    status: "active",
-  },
-]
-
 export function ClientsList() {
-  const [clients] = useState(mockClients)
+  const [clients, setClients] = useState([])
+  useEffect(() => {
+    fetch('/api/clients')
+      .then(res => res.json())
+      .then(setClients)
+  }, [])
 
   const getStatusBadge = (status: Client["status"]) => {
     switch (status) {
@@ -92,7 +46,7 @@ export function ClientsList() {
 
       {/* Clients */}
       <div className="space-y-3">
-        {clients.map((client, index) => (
+        {Array.isArray(clients) && clients.map((client, index) => (
           <motion.div
             key={client.id}
             initial={{ opacity: 0, y: 20 }}
@@ -116,7 +70,7 @@ export function ClientsList() {
 
                   {/* Organization */}
                   <div>
-                    <span className="text-sm">{client.organization}</span>
+                    <span className="text-sm">{client.organization_name || client.organization}</span>
                   </div>
 
                   {/* Status & Actions */}

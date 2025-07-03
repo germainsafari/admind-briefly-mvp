@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { BadgeCheck, Download, Eye, MoreHorizontal, Share2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -60,7 +60,45 @@ const mockBriefs: Brief[] = [
 ]
 
 export function BriefsList() {
-  const [briefs] = useState(mockBriefs)
+  const [briefs, setBriefs] = useState([])
+  const [form, setForm] = useState({ project_name: '', project_type: '', id: null })
+  const [editing, setEditing] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/briefs')
+      .then(res => res.json())
+      .then(setBriefs)
+  }, [])
+
+  const refresh = () => {
+    fetch('/api/briefs')
+      .then(res => res.json())
+      .then(setBriefs)
+  }
+
+  const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    if (editing) {
+      await fetch('/api/briefs', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    } else {
+      await fetch('/api/briefs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    }
+    setForm({ project_name: '', project_type: '', id: null })
+    setEditing(false)
+    refresh()
+  }
+
+  const handleEdit = brief => {
+    setForm(brief)
+    setEditing(true)
+  }
+
+  const handleDelete = async id => {
+    await fetch('/api/briefs', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    refresh()
+  }
 
   const getStatusPill = (status: Brief["status"]) => {
     switch (status) {
@@ -76,95 +114,32 @@ export function BriefsList() {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-2/5">Project name and type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Brief creator</TableHead>
-            <TableHead>Brief manager</TableHead>
-            <TableHead>Date of inquiry</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {briefs.map((brief, index) => (
-            <motion.tr
-              key={brief.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="group hover:bg-gray-50"
-            >
-              {/* Project name & type */}
-              <TableCell>
-                <div className="flex flex-col">
-                  <span className="font-medium">{brief.projectName}</span>
-                  <span className="text-sm text-gray-500">{brief.type}</span>
-                </div>
-              </TableCell>
-
-              {/* Status */}
-              <TableCell>{getStatusPill(brief.status)}</TableCell>
-
-              {/* Brief creator */}
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={brief.creator.avatar || "/placeholder.svg"} />
-                    <AvatarFallback>{brief.creator.name.slice(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">{brief.creator.name}</span>
-                </div>
-              </TableCell>
-
-              {/* Brief manager */}
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={brief.manager.avatar || "/placeholder.svg"} />
-                    <AvatarFallback>{brief.manager.name.slice(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">{brief.manager.name}</span>
-                </div>
-              </TableCell>
-
-              {/* Date */}
-              <TableCell>{new Date(brief.date).toLocaleDateString("en-GB")}</TableCell>
-
-              {/* Actions */}
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      See summary
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <BadgeCheck className="h-4 w-4 mr-2" />
-                      Mark complete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </motion.tr>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+        <input name="project_name" value={form.project_name} onChange={handleChange} placeholder="Project Name" className="border px-2" required />
+        <input name="project_type" value={form.project_type} onChange={handleChange} placeholder="Project Type" className="border px-2" required />
+        <button type="submit" className="btn-solid-dark hover:btn-solid-dark px-4">{editing ? 'Update' : 'Create'}</button>
+        {editing && <button type="button" onClick={() => { setEditing(false); setForm({ project_name: '', project_type: '', id: null }) }} className="ml-2">Cancel</button>}
+      </form>
+      <div className="grid grid-cols-5 gap-4 text-sm font-medium text-gray-500 px-4">
+        <div>Project Name</div>
+        <div>Type</div>
+        <div>Status</div>
+        <div>Actions</div>
+      </div>
+      <div className="space-y-3">
+        {Array.isArray(briefs) && briefs.map((brief, index) => (
+          <div key={brief.id} className="flex items-center gap-4 px-4 py-2 border rounded">
+            <div className="flex-1">{brief.project_name}</div>
+            <div className="flex-1">{brief.project_type}</div>
+            <div className="flex-1">{brief.status}</div>
+            <div className="flex gap-2">
+              <button onClick={() => handleEdit(brief)} className="btn-outline-dark px-2">Edit</button>
+              <button onClick={() => handleDelete(brief.id)} className="btn-outline-dark px-2 text-red-600">Delete</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }

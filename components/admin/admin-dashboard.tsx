@@ -9,6 +9,8 @@ import { ManagersList } from "./managers-list"
 import { ClientsList } from "./clients-list"
 import { BriefsList } from "./briefs-list"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { AddClientModal } from "@/components/manager/add-client-modal"
+import { AddManagerModal } from "./add-manager-modal"
 
 const summaryCards = [
   {
@@ -39,7 +41,12 @@ const summaryCards = [
 
 export function AdminDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showAddManagerModal, setShowAddManagerModal] = useState(false)
+  const [showAddClientModal, setShowAddClientModal] = useState(false)
   const [activeTab, setActiveTab] = useState("organizations")
+  const [orgsRefreshKey, setOrgsRefreshKey] = useState(0)
+  const [managersRefreshKey, setManagersRefreshKey] = useState(0)
+  const [clientsRefreshKey, setClientsRefreshKey] = useState(0)
 
   const tabCounts = {
     organizations: 2,
@@ -91,7 +98,14 @@ export function AdminDashboard() {
 
       {/* Action Button */}
       <div className="flex justify-end">
-        <Button onClick={() => setShowCreateModal(true)} className="btn-solid-dark hover:btn-solid-dark">
+        <Button
+          onClick={() => {
+            if (activeTab === "managers") setShowAddManagerModal(true)
+            else if (activeTab === "clients") setShowAddClientModal(true)
+            else setShowCreateModal(true)
+          }}
+          className="btn-solid-dark hover:btn-solid-dark"
+        >
           {activeTab === "organizations" && "Create new organization"}
           {activeTab === "managers" && "Add new manager"}
           {activeTab === "clients" && "Add new client"}
@@ -101,13 +115,21 @@ export function AdminDashboard() {
       </div>
 
       {/* Content based on active tab */}
-      {activeTab === "organizations" && <OrganizationsList />}
-      {activeTab === "managers" && <ManagersList />}
-      {activeTab === "clients" && <ClientsList />}
+      {activeTab === "organizations" && <OrganizationsList key={orgsRefreshKey} />}
+      {activeTab === "managers" && <ManagersList key={managersRefreshKey} />}
+      {activeTab === "clients" && <ClientsList key={clientsRefreshKey} />}
       {activeTab === "briefs" && <BriefsList />}
 
       {/* Create Organization Modal */}
-      <CreateOrganizationModal open={showCreateModal} onOpenChange={setShowCreateModal} />
+      <CreateOrganizationModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onOrganizationCreated={() => setOrgsRefreshKey((k) => k + 1)}
+      />
+      {/* Add Manager Modal */}
+      <AddManagerModal open={showAddManagerModal} onOpenChange={setShowAddManagerModal} onManagerCreated={() => setManagersRefreshKey(k => k + 1)} />
+      {/* Add Client Modal */}
+      <AddClientModal open={showAddClientModal} onOpenChange={setShowAddClientModal} onClientCreated={() => setClientsRefreshKey(k => k + 1)} />
     </div>
   )
 }

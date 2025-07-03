@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Plus, Trash2, Copy, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,73 +23,61 @@ interface ClientBrief {
   editable: boolean
 }
 
-const mockClientBriefs: ClientBrief[] = [
-  {
-    id: "1",
-    projectName: "Product Launch External Campaign",
-    type: "General",
-    status: "Draft",
-    progress: 50,
-    date: "2025-01-15",
-    editable: true,
-  },
-  {
-    id: "2",
-    projectName: "ABB Robotics website UX/UI Audit",
-    type: "UX/UI Website",
-    status: "Sent",
-    date: "2025-06-20",
-    editable: false,
-  },
-  {
-    id: "3",
-    projectName: "V2 - Internal Communications Video",
-    type: "Video/Animation",
-    status: "Sent",
-    date: "2025-01-05",
-    editable: false,
-  },
-  {
-    id: "4",
-    projectName: "V1 - Internal Communications Video",
-    type: "Video/Animation",
-    status: "Shared",
-    date: "2025-01-03",
-    editable: false,
-  },
-  {
-    id: "5",
-    projectName: "Brand Refresh Project",
-    type: "General",
-    status: "Sent",
-    date: "2024-12-03",
-    editable: false,
-  },
-]
-
 const briefTypes = ["General", "UX/UI Website", "Event/Tradeshow", "Video/Animation", "Digital Paid Campaign"]
 
 export function ClientDashboardEnhanced() {
+  const [briefs, setBriefs] = useState<ClientBrief[]>([])
   const [activeTab, setActiveTab] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [showBriefBuilder, setShowBriefBuilder] = useState(false)
   const [hoveredBrief, setHoveredBrief] = useState<string | null>(null)
+  const [formattedDate, setFormattedDate] = useState<string>("")
+
+  useEffect(() => {
+    fetch('/api/briefs')
+      .then(async res => {
+        if (!res.ok) {
+          return [];
+        }
+        try {
+          return await res.json();
+        } catch {
+          return [];
+        }
+      })
+      .then((data) => {
+        setBriefs(
+          Array.isArray(data)
+            ? data.map((brief) => ({
+                id: brief.id,
+                projectName: brief.project_name,
+                type: (brief.project_type || "").replace(/_/g, "/"),
+                status: brief.status === "New" ? "Draft" : brief.status, // Map as needed
+                progress: brief.progress,
+                date: brief.created_at,
+                editable: true, // Set based on your logic
+              }))
+            : []
+        );
+      })
+      .catch(() => setBriefs([]));
+  }, []);
 
   const briefCounts = {
-    all: mockClientBriefs.length,
-    sent: mockClientBriefs.filter((b) => b.status === "Sent").length,
-    drafts: mockClientBriefs.filter((b) => b.status === "Draft").length,
-    shared: mockClientBriefs.filter((b) => b.status === "Shared").length,
+    all: briefs.length,
+    sent: briefs.filter((b) => b.status === "Sent").length,
+    drafts: briefs.filter((b) => b.status === "Draft").length,
+    shared: briefs.filter((b) => b.status === "Shared").length,
   }
 
-  const filteredBriefs = mockClientBriefs.filter((brief) => {
+  const filteredBriefs = Array.isArray(briefs) ? briefs.filter((brief) => {
     if (activeTab === "sent" && brief.status !== "Sent") return false
     if (activeTab === "drafts" && brief.status !== "Draft") return false
     if (activeTab === "shared" && brief.status !== "Shared") return false
     if (selectedTypes.length > 0 && !selectedTypes.includes(brief.type)) return false
     return true
-  })
+  }) : [];
 
   const getStatusBadge = (status: ClientBrief["status"]) => {
     switch (status) {
@@ -112,6 +100,18 @@ export function ClientDashboardEnhanced() {
   const clearFilters = () => {
     setSelectedTypes([])
   }
+
+  useEffect(() => {
+    if (briefs.length > 0) {
+      const formattedDates = briefs.map(brief => {
+        if (brief.date) {
+          return new Date(brief.date).toLocaleDateString("en-GB")
+        }
+        return "-"
+      })
+      setFormattedDate(formattedDates.join(", "))
+    }
+  }, [briefs])
 
   if (showBriefBuilder) {
     return <BriefBuilderWizard onClose={() => setShowBriefBuilder(false)} />
@@ -282,12 +282,6 @@ export function ClientDashboardEnhanced() {
                         <div className="col-span-2">
                           <div className="flex items-center space-x-2">
                             {getStatusBadge(brief.status)}
-                            {brief.status === "Draft" && brief.progress && (
-                              <div className="flex items-center space-x-2">
-                                <Progress value={brief.progress} className="w-16 h-2" />
-                                <span className="text-xs text-gray-500">{brief.progress}%</span>
-                              </div>
-                            )}
                           </div>
                         </div>
 
@@ -300,15 +294,9 @@ export function ClientDashboardEnhanced() {
 
                         {/* Actions */}
                         <div className="col-span-2 flex justify-end space-x-2">
-                          {brief.status === "Draft" ? (
-                            <Button variant="outline" size="sm" onClick={() => setShowBriefBuilder(true)}>
-                              Continue writing
-                            </Button>
-                          ) : (
-                            <Button variant="outline" size="sm">
-                              See Summary
-                            </Button>
-                          )}
+                          <Button variant="outline" size="sm">
+                            See Summary
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -321,7 +309,7 @@ export function ClientDashboardEnhanced() {
                         <>
                           <div className="bg-black text-white text-xs px-2 py-1 rounded shadow-lg">
                             <button
-                              onClick={() => handleAction("delete", brief)}
+                              onClick={() => handleAction("delete", brief as ClientBrief)}
                               className="flex items-center space-x-1 hover:text-red-300"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -330,7 +318,7 @@ export function ClientDashboardEnhanced() {
                           </div>
                           <div className="bg-black text-white text-xs px-2 py-1 rounded shadow-lg">
                             <button
-                              onClick={() => handleAction("duplicate", brief)}
+                              onClick={() => handleAction("duplicate", brief as ClientBrief)}
                               className="flex items-center space-x-1"
                             >
                               <Copy className="h-3 w-3" />
@@ -341,7 +329,7 @@ export function ClientDashboardEnhanced() {
                       )}
                       {brief.status === "Sent" && (
                         <div className="bg-black text-white text-xs px-2 py-1 rounded shadow-lg">
-                          <button onClick={() => handleAction("update", brief)} className="flex items-center space-x-1">
+                          <button onClick={() => handleAction("update", brief as ClientBrief)} className="flex items-center space-x-1">
                             <RotateCcw className="h-3 w-3" />
                             <span>Update</span>
                           </button>

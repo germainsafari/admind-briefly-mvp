@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -19,39 +19,18 @@ interface Organization {
   clientsCount: number
 }
 
-const mockOrganizations: Organization[] = [
-  {
-    id: "1",
-    name: "ABB Corporation",
-    logo: "/placeholder.svg?height=40&width=40",
-    aiSupport: true,
-    managersCount: 8,
-    clientsCount: 24,
-  },
-  {
-    id: "2",
-    name: "Tech Solutions Inc",
-    logo: "/placeholder.svg?height=40&width=40",
-    aiSupport: false,
-    managersCount: 5,
-    clientsCount: 12,
-  },
-  {
-    id: "3",
-    name: "Creative Agency",
-    logo: "/placeholder.svg?height=40&width=40",
-    aiSupport: true,
-    managersCount: 12,
-    clientsCount: 36,
-  },
-]
-
 interface OrganizationTableProps {
   searchQuery: string
 }
 
 export function OrganizationTable({ searchQuery }: OrganizationTableProps) {
-  const [organizations, setOrganizations] = useState(mockOrganizations)
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+
+  useEffect(() => {
+    fetch('/api/organizations')
+      .then(res => res.json())
+      .then(data => setOrganizations(data))
+  }, [])
 
   const filteredOrganizations = organizations.filter((org) =>
     org.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -66,6 +45,8 @@ export function OrganizationTable({ searchQuery }: OrganizationTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>#</TableHead>
+            <TableHead>ID</TableHead>
             <TableHead>Organization</TableHead>
             <TableHead>AI Support</TableHead>
             <TableHead>Managers</TableHead>
@@ -82,6 +63,8 @@ export function OrganizationTable({ searchQuery }: OrganizationTableProps) {
               transition={{ delay: index * 0.1 }}
               className="group hover:bg-gray-50"
             >
+              <TableCell>{index + 1}</TableCell>
+              <TableCell>{org.id}</TableCell>
               <TableCell>
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-10 w-10">
@@ -105,7 +88,7 @@ export function OrganizationTable({ searchQuery }: OrganizationTableProps) {
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" aria-label="Organization actions">
                     <DropdownMenuItem>
                       <Eye className="h-4 w-4 mr-2" />
                       View Details

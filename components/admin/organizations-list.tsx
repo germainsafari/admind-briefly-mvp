@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Plus, MoreHorizontal } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -20,24 +20,13 @@ interface Organization {
   }>
 }
 
-const mockOrganizations: Organization[] = [
-  {
-    id: "1",
-    name: "Hitachi",
-    logo: "/placeholder.svg?height=40&width=40",
-    clientsCount: 1,
-    members: [
-      {
-        id: "1",
-        name: "John Doe",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-    ],
-  },
-]
-
 export function OrganizationsList() {
-  const [organizations] = useState(mockOrganizations)
+  const [organizations, setOrganizations] = useState([])
+  useEffect(() => {
+    fetch('/api/organizations')
+      .then(res => res.json())
+      .then(setOrganizations)
+  }, [])
 
   return (
     <div className="space-y-4">
@@ -51,7 +40,7 @@ export function OrganizationsList() {
 
       {/* Organizations */}
       <div className="space-y-3">
-        {organizations.map((org, index) => (
+        {Array.isArray(organizations) && organizations.map((org, index) => (
           <motion.div
             key={org.id}
             initial={{ opacity: 0, y: 20 }}
@@ -75,7 +64,7 @@ export function OrganizationsList() {
                     <span>
                       {org.clientsCount} client{org.clientsCount !== 1 ? "s" : ""}
                     </span>
-                    {org.members.map((member) => (
+                    {org.members && org.members.map((member) => (
                       <Avatar key={member.id} className="h-6 w-6">
                         <AvatarImage src={member.avatar || "/placeholder.svg"} />
                         <AvatarFallback>{member.name.substring(0, 2)}</AvatarFallback>
@@ -101,7 +90,7 @@ export function OrganizationsList() {
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" aria-label="Organization actions">
                         <DropdownMenuItem>Edit</DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
                       </DropdownMenuContent>

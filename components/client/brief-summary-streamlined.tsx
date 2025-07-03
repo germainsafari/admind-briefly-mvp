@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowLeft, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,8 +9,22 @@ import { ShareBriefModal } from "./share-brief-modal-enhanced"
 import { BriefSuccessPage } from "./brief-success-page"
 import { BriefDetailModal } from "./brief-detail-modal"
 
+interface BriefSummaryData {
+  projectName?: string;
+  projectType?: string;
+  projectDescription?: string;
+  timelineExpectations?: string;
+  finalNotes?: string;
+  links?: string[];
+  attachments?: (string | File)[];
+  // ...add all other fields as needed
+}
+
 interface BriefSummaryStreamlinedProps {
-  onBack: () => void
+  data?: BriefSummaryData;
+  onBack: () => void;
+  onSubmit: () => void;
+  submitStatus: string;
 }
 
 const briefSteps = [
@@ -24,7 +38,7 @@ const briefSteps = [
   { id: 8, title: "Brief summary", completed: false },
 ]
 
-export function BriefSummaryStreamlined({ onBack }: BriefSummaryStreamlinedProps) {
+export function BriefSummaryStreamlined({ data = {}, onBack, onSubmit, submitStatus }: BriefSummaryStreamlinedProps) {
   const [showShareModal, setShowShareModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
@@ -93,65 +107,85 @@ export function BriefSummaryStreamlined({ onBack }: BriefSummaryStreamlinedProps
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-text">Brief summary</h1>
-                <Button variant="ghost" size="sm" className="text-text-muted">
-                  <Edit2 className="h-4 w-4 mr-2" />
+                <Button variant="ghost" size="sm" className="text-text-muted" onClick={onBack}>
                   Edit
                 </Button>
               </div>
 
               {/* Summary Overview */}
               <Card className="card-bg shadow-sm">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <div className="text-sm font-medium text-text-muted mb-1">Project Title</div>
-                        <div className="text-lg font-semibold text-text">Marketing campaign</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-text-muted mb-1">Project Type</div>
-                        <div className="text-lg font-semibold text-text">General</div>
-                      </div>
-                    </div>
-
+                <CardContent className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <div className="text-sm font-medium text-text-muted mb-2">Project Description</div>
-                      <div className="text-text">
-                        Lorem ipsum dolor sit amet consectetur. Mauris ipsum arcu vulputate molestie ipsum vitae.
-                        Aliquet at auctor nisl et ac morbi turpis eu habitasse.
-                      </div>
+                      <div className="text-sm font-medium text-text-muted mb-1">Project Title</div>
+                      <div className="text-lg font-semibold text-text">{data.projectName || ''}</div>
                     </div>
-
                     <div>
-                      <div className="text-sm font-medium text-text-muted mb-2">Timeline Expectations</div>
-                      <div className="text-text">6 weeks</div>
+                      <div className="text-sm font-medium text-text-muted mb-1">Project Type</div>
+                      <div className="text-lg font-semibold text-text">{data.projectType || ''}</div>
                     </div>
+                  </div>
 
-                    <div className="pt-4 border-t">
-                      <Button
-                        variant="outline"
-                        onClick={handleViewDetails}
-                        className="text-accent-orange border-accent-orange hover:bg-accent-light bg-transparent"
-                      >
-                        View Full Brief Details
-                      </Button>
+                  <div>
+                    <div className="text-sm font-medium text-text-muted mb-2">Project Description</div>
+                    <div className="text-text">{data.projectDescription || ''}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium text-text-muted mb-2">Timeline Expectations</div>
+                    <div className="text-text">{data.timelineExpectations || ''}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium text-text-muted mb-2">Final Notes</div>
+                    <div className="text-text">{data.finalNotes || ''}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium text-text-muted mb-2">Links</div>
+                    <div className="space-y-1">
+                      {data.links?.map((link, idx) => (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <span className="text-text">{link || ''}</span>
+                        </div>
+                      ))}
                     </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium text-text-muted mb-2">Attachments</div>
+                    <div className="space-y-1">
+                      {data.attachments?.map((file, idx) => (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <span className="text-text">
+                            {typeof file === "string"
+                              ? file
+                              : file instanceof File
+                                ? file.name
+                                : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={handleViewDetails}
+                      className="text-accent-orange border-accent-orange hover:bg-accent-light bg-transparent"
+                    >
+                      View Full Brief Details
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Navigation */}
-              <div className="flex justify-between pt-8">
-                <Button variant="ghost" onClick={onBack} className="text-text">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={() => setShowShareModal(true)}
-                  className="accent-bg hover:accent-light-bg hover:text-accent-orange text-white"
-                >
-                  Submit the brief
-                </Button>
+              <div className="flex justify-end pt-8">
+                <Button onClick={onSubmit} className="accent-bg text-white">Save & Submit</Button>
+                {submitStatus === 'success' && <div className="text-green-600 ml-4">Brief submitted successfully!</div>}
+                {submitStatus === 'error' && <div className="text-red-600 ml-4">There was an error submitting your brief.</div>}
               </div>
             </div>
           </div>
@@ -160,7 +194,7 @@ export function BriefSummaryStreamlined({ onBack }: BriefSummaryStreamlinedProps
 
       {/* Modals */}
       <ShareBriefModal open={showShareModal} onOpenChange={setShowShareModal} onSubmit={handleSubmitBrief} />
-      <BriefDetailModal open={showDetailModal} onOpenChange={setShowDetailModal} />
+      <BriefDetailModal open={showDetailModal} onOpenChange={setShowDetailModal} brief={data} />
     </div>
   )
 }

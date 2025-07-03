@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,43 +16,13 @@ interface Manager {
   status: "active" | "invited" | "deactivated"
 }
 
-const mockManagers: Manager[] = [
-  {
-    id: "1",
-    name: "Dawid Janas",
-    title: "Project manager",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "Admind Agency",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Natalia Haligowska-Rzepa",
-    title: "Account Director",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "Admind Agency",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Martyna Florej",
-    title: "Senior Project Manager",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "Admind Agency",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "Jane Doe",
-    title: "Project Manager",
-    avatar: "/placeholder.svg?height=40&width=40",
-    organization: "Admind Agency",
-    status: "deactivated",
-  },
-]
-
 export function ManagersList() {
-  const [managers] = useState(mockManagers)
+  const [managers, setManagers] = useState([])
+  useEffect(() => {
+    fetch('/api/managers')
+      .then(res => res.json())
+      .then(setManagers)
+  }, [])
 
   const getStatusBadge = (status: Manager["status"]) => {
     switch (status) {
@@ -76,7 +46,7 @@ export function ManagersList() {
 
       {/* Managers */}
       <div className="space-y-3">
-        {managers.map((manager, index) => (
+        {Array.isArray(managers) && managers.map((manager, index) => (
           <motion.div
             key={manager.id}
             initial={{ opacity: 0, y: 20 }}
@@ -100,7 +70,7 @@ export function ManagersList() {
 
                   {/* Organization */}
                   <div>
-                    <span className="text-sm">{manager.organization}</span>
+                    <span className="text-sm">{manager.organization_name || manager.organization}</span>
                   </div>
 
                   {/* Status & Actions */}

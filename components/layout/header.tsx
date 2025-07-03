@@ -79,7 +79,7 @@ export function Header() {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" aria-label="User menu">
                 <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem>Onboarding</DropdownMenuItem>
                 <DropdownMenuItem

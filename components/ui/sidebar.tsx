@@ -4,6 +4,7 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
+import { useEffect, useState } from 'react'
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -205,6 +206,8 @@ const Sidebar = React.forwardRef<
               } as React.CSSProperties
             }
             side={side}
+            aria-labelledby="sidebar-sheet-title"
+            aria-describedby={undefined}
           >
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
@@ -580,12 +583,9 @@ const SidebarMenuButton = React.forwardRef<
     return (
       <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent
-          side="right"
-          align="center"
-          hidden={state !== "collapsed" || isMobile}
-          {...tooltip}
-        />
+        <TooltipContent role="tooltip">
+          {tooltip}
+        </TooltipContent>
       </Tooltip>
     )
   }
@@ -650,9 +650,10 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
+  // Set a default value for SSR, then update on client
+  const [randomPercent, setRandomPercent] = useState<string>("70%")
+  useEffect(() => {
+    setRandomPercent(`${Math.floor(Math.random() * 40) + 50}%`)
   }, [])
 
   return (
@@ -673,7 +674,7 @@ const SidebarMenuSkeleton = React.forwardRef<
         data-sidebar="menu-skeleton-text"
         style={
           {
-            "--skeleton-width": width,
+            "--skeleton-width": randomPercent,
           } as React.CSSProperties
         }
       />

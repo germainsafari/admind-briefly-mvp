@@ -39,9 +39,14 @@ export function DownloadBriefModal({ open, onOpenChange, brief }: DownloadBriefM
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        aria-labelledby="download-brief-title"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
-          <DialogTitle className="text-xl">Download brief</DialogTitle>
+          <DialogTitle id="download-brief-title" className="text-xl">Download brief</DialogTitle>
+          <p id="download-brief-desc" className="text-gray-600 mt-2">Choose your download options for this brief.</p>
         </DialogHeader>
 
         <div className="space-y-4 mt-6">

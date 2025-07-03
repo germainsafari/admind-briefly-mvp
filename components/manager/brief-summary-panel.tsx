@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { useEffect, useState } from 'react';
 
 interface Brief {
   id: string
@@ -28,9 +29,25 @@ interface BriefSummaryPanelProps {
 export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPanelProps) {
   if (!brief) return null
 
+  const [formattedDate, setFormattedDate] = useState<string>("");
+  useEffect(() => {
+    setFormattedDate(new Date(brief.date).toLocaleDateString("en-GB"));
+  }, [brief.date]);
+
+  const handleScrollToTop = () => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-2xl"
+        aria-labelledby="brief-summary-title"
+        aria-describedby={undefined}
+      >
         <SheetHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <Button variant="ghost" onClick={() => onOpenChange(false)} className="p-0">
@@ -68,7 +85,7 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                 </div>
                 <div>
                   <div className="text-sm text-gray-500 mb-1">Date of inquiry</div>
-                  <div className="font-medium">{new Date(brief.date).toLocaleDateString("en-GB")}</div>
+                  <div className="font-medium">{formattedDate}</div>
                 </div>
               </div>
 
@@ -210,7 +227,7 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
 
           {/* Back to Top */}
           <div className="flex justify-end pt-8">
-            <Button variant="ghost" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <Button variant="ghost" onClick={handleScrollToTop}>
               ↑ Back to top
             </Button>
           </div>

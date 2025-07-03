@@ -1,7 +1,3 @@
-"use client"
-
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -9,20 +5,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft } from "lucide-react"
 
-interface AddClientModalProps {
+interface AddManagerModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onClientCreated?: () => void
+  onManagerCreated?: () => void
 }
 
-export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClientModalProps) {
-  const [clientData, setClientData] = useState({
+export function AddManagerModal({ open, onOpenChange, onManagerCreated }: AddManagerModalProps) {
+  const [managerData, setManagerData] = useState({
     name: "",
     jobTitle: "",
     email: "",
     organization: "",
+    phone: "",
     avatar: null as File | null,
   })
   const [organizations, setOrganizations] = useState<{ id: string, name: string, logo?: string }[]>([])
@@ -37,57 +33,48 @@ export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClien
 
   const handleSave = async () => {
     try {
-      const response = await fetch('/api/clients', {
+      const response = await fetch('/api/managers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: clientData.name,
-          jobTitle: clientData.jobTitle,
-          email: clientData.email,
-          organization: clientData.organization,
-          avatar: clientData.avatar, // null or file, not handled yet
+          name: managerData.name,
+          jobTitle: managerData.jobTitle,
+          email: managerData.email,
+          organization: managerData.organization,
+          phone: managerData.phone,
+          avatar: managerData.avatar, // null or file, not handled yet
         }),
       });
-      if (!response.ok) throw new Error('Failed to create client');
-      if (onClientCreated) onClientCreated();
+      if (!response.ok) throw new Error('Failed to create manager');
+      if (onManagerCreated) onManagerCreated();
       onOpenChange(false);
-      setClientData({
+      setManagerData({
         name: "",
         jobTitle: "",
         email: "",
         organization: "",
+        phone: "",
         avatar: null,
       });
     } catch (err: any) {
-      alert(err.message || 'Error creating client');
+      alert(err.message || 'Error creating manager');
     }
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      setClientData((prev) => ({ ...prev, avatar: file }))
+      setManagerData((prev) => ({ ...prev, avatar: file }))
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-md"
-        aria-labelledby="add-client-title"
-        aria-describedby={undefined}
-      >
+      <DialogContent className="max-w-md" aria-labelledby="add-manager-title" aria-describedby="add-manager-desc">
         <DialogHeader>
-          <DialogTitle id="add-client-title" className="text-xl">Add New Client</DialogTitle>
-          <DialogDescription id="add-client-desc">Fill in the details to add a new client to your organization.</DialogDescription>
-          <div className="flex items-center space-x-3 mb-6">
-            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} className="p-0">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to dashboard
-            </Button>
-          </div>
+          <DialogTitle id="add-manager-title" className="text-xl">Add New Manager</DialogTitle>
+          <DialogDescription id="add-manager-desc">Fill in the details to add a new manager to your organization.</DialogDescription>
         </DialogHeader>
-
         <div className="space-y-6">
           {/* Profile Image */}
           <div className="flex flex-col items-center space-y-3">
@@ -95,11 +82,11 @@ export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClien
               <Avatar className="h-20 w-20">
                 <AvatarImage
                   src={
-                    clientData.avatar ? URL.createObjectURL(clientData.avatar) : "/placeholder.svg?height=80&width=80"
+                    managerData.avatar ? URL.createObjectURL(managerData.avatar) : "/placeholder.svg?height=80&width=80"
                   }
                 />
                 <AvatarFallback className="text-lg">
-                  {clientData.name ? clientData.name.substring(0, 2).toUpperCase() : "CN"}
+                  {managerData.name ? managerData.name.substring(0, 2).toUpperCase() : "MN"}
                 </AvatarFallback>
               </Avatar>
             </div>
@@ -119,9 +106,9 @@ export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClien
               </Label>
               <Input
                 id="name"
-                value={clientData.name}
-                onChange={(e) => setClientData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Beyonce Knowles"
+                value={managerData.name}
+                onChange={(e) => setManagerData((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Dawid Janas"
                 className="border-gray-200"
               />
             </div>
@@ -132,9 +119,9 @@ export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClien
               </Label>
               <Input
                 id="jobTitle"
-                value={clientData.jobTitle}
-                onChange={(e) => setClientData((prev) => ({ ...prev, jobTitle: e.target.value }))}
-                placeholder="Singer and Songwriter"
+                value={managerData.jobTitle}
+                onChange={(e) => setManagerData((prev) => ({ ...prev, jobTitle: e.target.value }))}
+                placeholder="Manager"
                 className="border-gray-200"
               />
             </div>
@@ -146,20 +133,20 @@ export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClien
               <Input
                 id="email"
                 type="email"
-                value={clientData.email}
-                onChange={(e) => setClientData((prev) => ({ ...prev, email: e.target.value }))}
-                placeholder="beyonce.knowles@ch.abb.com"
+                value={managerData.email}
+                onChange={(e) => setManagerData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="dawid.janas@admindagency.com"
                 className="border-gray-200"
               />
             </div>
 
             <div>
               <Label className="text-sm font-medium text-text-muted mb-2 block">
-                Choose organization from the list
+                Choose organization from the list*
               </Label>
               <Select
-                value={clientData.organization}
-                onValueChange={(value) => setClientData((prev) => ({ ...prev, organization: value }))}
+                value={managerData.organization}
+                onValueChange={(value) => setManagerData((prev) => ({ ...prev, organization: value }))}
               >
                 <SelectTrigger className="border-gray-200">
                   <SelectValue placeholder="Select" />
@@ -176,9 +163,22 @@ export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClien
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label htmlFor="phone" className="text-sm font-medium text-text-muted mb-2 block">
+                Enter phone number
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={managerData.phone}
+                onChange={(e) => setManagerData((prev) => ({ ...prev, phone: e.target.value }))}
+                placeholder="+48 456 975 057"
+                className="border-gray-200"
+              />
+            </div>
           </div>
         </div>
-
         {/* Actions */}
         <div className="flex justify-between pt-6 mt-6 border-t">
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-text-muted">
@@ -186,13 +186,13 @@ export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClien
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!clientData.name || !clientData.email || !clientData.organization}
+            disabled={!managerData.name || !managerData.email || !managerData.organization}
             className="btn-solid-dark hover:btn-solid-dark"
           >
-            Save and send invite
+            Save changes
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   )
-}
+} 

@@ -3,15 +3,17 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Upload, Plus, Trash2 } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
 
 interface CreateOrganizationModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onOrganizationCreated?: () => void
 }
 
 interface OrganizationData {
@@ -21,7 +23,7 @@ interface OrganizationData {
   emails: string[]
 }
 
-export function CreateOrganizationModal({ open, onOpenChange }: CreateOrganizationModalProps) {
+export function CreateOrganizationModal({ open, onOpenChange, onOrganizationCreated }: CreateOrganizationModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [orgData, setOrgData] = useState<OrganizationData>({
     name: "",
@@ -29,6 +31,7 @@ export function CreateOrganizationModal({ open, onOpenChange }: CreateOrganizati
     logo: null,
     emails: [""],
   })
+  const { toast } = useToast();
 
   const steps = [
     { number: 1, title: "Basic Information" },
@@ -69,19 +72,35 @@ export function CreateOrganizationModal({ open, onOpenChange }: CreateOrganizati
     }))
   }
 
-  const handleSave = () => {
-    // Handle save logic here
-    console.log("Saving organization:", orgData)
-    onOpenChange(false)
-    setCurrentStep(1)
-    setOrgData({ name: "", location: "", logo: null, emails: [""] })
-  }
+  const handleSave = async () => {
+    try {
+      const response = await fetch("/api/organizations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orgData),
+      });
+      if (!response.ok) throw new Error("Failed to create organization");
+      toast({ title: "Organization created!", description: `${orgData.name} was successfully created.` });
+      if (onOrganizationCreated) onOrganizationCreated();
+      onOpenChange(false);
+      setCurrentStep(1);
+      setOrgData({ name: "", location: "", logo: null, emails: [""] });
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+      console.error(err);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        aria-labelledby="create-org-title"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
-          <DialogTitle className="text-2xl">Create New Organization</DialogTitle>
+          <DialogTitle id="create-org-title" className="sr-only">Create New Organization</DialogTitle>
+          <DialogDescription id="create-org-desc">Fill in the details to create a new organization.</DialogDescription>
         </DialogHeader>
 
         {/* Step Indicator */}

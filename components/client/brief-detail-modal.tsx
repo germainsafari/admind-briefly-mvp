@@ -9,95 +9,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 interface BriefDetailModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  brief: any // Use the BriefData type if available
 }
 
-const briefSections = [
-  {
-    id: 1,
-    title: "Project Overview",
-    content: {
-      projectTitle: "Marketing campaign",
-      projectType: "General",
-      projectDescription:
-        "Lorem ipsum dolor sit amet consectetur. Mauris ipsum arcu vulputate molestie ipsum vitae. Aliquet at auctor nisl et ac morbi turpis eu habitasse. Vitae fermentum amet molestie justo porttibus amet.",
-      businessGoals: "Increase brand awareness and drive customer engagement through targeted marketing initiatives.",
-      communicationGoals:
-        "Establish clear messaging that resonates with our target audience and differentiates us from competitors.",
-      projectKPI: "Increase website traffic by 40%, generate 500 new leads, improve brand recognition by 25%.",
-      challenge: "Breaking through market noise and establishing meaningful connections with potential customers.",
-      timelineExpectations: "6 weeks",
-      projectBudget: "$50,000",
-    },
-  },
-  {
-    id: 2,
-    title: "Project Scope and Requirements",
-    content: {
-      agencyScope:
-        "Full-service marketing campaign including strategy, creative development, and execution across multiple channels.",
-      mandatories: "Brand guidelines compliance, accessibility standards, legal review for all materials.",
-      technicalRequirements: "Responsive design, cross-browser compatibility, analytics tracking implementation.",
-    },
-  },
-  {
-    id: 3,
-    title: "Audience and Insights",
-    content: {
-      targetAudience:
-        "Tech-savvy professionals aged 25-45, decision-makers in mid-to-large companies, early adopters of new technologies.",
-      internalStakeholders: "Marketing team, product managers, C-suite executives, sales representatives.",
-      consumerInsight:
-        "Our audience values efficiency and innovation, seeking solutions that save time and improve productivity.",
-      rtbFeatures: "Advanced analytics, seamless integration, 24/7 support, competitive pricing, proven ROI.",
-    },
-  },
-  {
-    id: 4,
-    title: "Strategic Input",
-    content: {
-      keyMessage: "Empowering businesses to achieve more through innovative technology solutions.",
-      valueProposition:
-        "The only platform that combines powerful analytics with intuitive design for maximum business impact.",
-      toneOfVoice: "Professional yet approachable, confident but not arrogant, innovative and forward-thinking.",
-      marketCompetition:
-        "Competing against established players like Salesforce and HubSpot, differentiating through superior user experience.",
-    },
-  },
-  {
-    id: 5,
-    title: "References and Context",
-    content: {
-      inspirations: "Apple's clean design aesthetic, Google's user-centric approach, Tesla's innovation messaging.",
-      pastCommunication:
-        "Previous campaigns focused on features rather than benefits, need to shift to outcome-based messaging.",
-    },
-  },
-  {
-    id: 6,
-    title: "Channels and Touchpoints",
-    content: {
-      touchpoints: {
-        website: "Dedicated campaign landing page optimized for conversions and lead capture.",
-        emailMarketing: "Personalized email sequences targeting segmented audiences with relevant messaging.",
-        socialMedia: "Paid and organic posts on LinkedIn, Twitter, and Facebook to engage professional audiences.",
-        contentMarketing: "Blog posts, whitepapers, and case studies to establish thought leadership.",
-        paidAdvertising: "Google Ads and social media advertising to drive targeted traffic.",
-      },
-    },
-  },
-  {
-    id: 7,
-    title: "Final Notes and Attachments",
-    content: {
-      finalNotes:
-        "Please ensure all materials align with our brand guidelines and maintain consistency across all touchpoints. We're excited to work together on this project!",
-      links: ["https://brandguidelines.company.com", "https://competitoranalysis.company.com"],
-      attachments: ["brand_guidelines.pdf", "market_research.xlsx", "previous_campaign_results.pptx"],
-    },
-  },
-]
-
-export function BriefDetailModal({ open, onOpenChange }: BriefDetailModalProps) {
+export function BriefDetailModal({ open, onOpenChange, brief }: BriefDetailModalProps) {
   const [expandedSections, setExpandedSections] = useState<number[]>([1])
 
   const toggleSection = (sectionId: number) => {
@@ -108,155 +23,131 @@ export function BriefDetailModal({ open, onOpenChange }: BriefDetailModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto card-bg">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] overflow-y-auto card-bg"
+        aria-labelledby="brief-detail-title"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl text-text">Complete Brief Details</DialogTitle>
+            <DialogTitle id="brief-detail-title" className="text-2xl text-text">Complete Brief Details</DialogTitle>
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
+        <p id="brief-detail-desc" className="sr-only">Full details of the submitted creative brief, including all sections and attachments.</p>
 
         <div className="space-y-4 mt-6">
-          {briefSections.map((section) => (
-            <Collapsible
-              key={section.id}
-              open={expandedSections.includes(section.id)}
-              onOpenChange={() => toggleSection(section.id)}
-            >
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <span className="font-semibold text-text">
-                  {section.id}. {section.title}
-                </span>
-                {expandedSections.includes(section.id) ? (
-                  <ChevronUp className="h-5 w-5 text-text-muted" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-text-muted" />
-                )}
-              </CollapsibleTrigger>
+          {/* Project Overview */}
+          <Collapsible open={expandedSections.includes(1)} onOpenChange={() => toggleSection(1)}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <span className="font-semibold text-text">1. Project Overview</span>
+              {expandedSections.includes(1) ? <ChevronUp className="h-5 w-5 text-text-muted" /> : <ChevronDown className="h-5 w-5 text-text-muted" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
+              <div className="space-y-4 text-sm">
+                <div><div className="font-medium text-text-muted mb-2">Project Title</div><div className="text-text">{brief.projectName}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Project Type</div><div className="text-text">{brief.projectType}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Project Description</div><div className="text-text">{brief.projectDescription}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Business Goals</div><div className="text-text">{brief.businessGoals}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Communication Goals</div><div className="text-text">{brief.communicationGoals}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Project KPI</div><div className="text-text">{brief.projectKPI}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Challenge</div><div className="text-text">{brief.challenge}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Timeline Expectations</div><div className="text-text">{brief.timelineExpectations}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Project Budget</div><div className="text-text">{brief.projectBudget}</div></div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
-              <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
-                <div className="space-y-4 text-sm">
-                  {section.id === 1 && (
-                    <div className="space-y-4">
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Project Title</div>
-                        <div className="text-text">{section.content.projectTitle}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Project Type</div>
-                        <div className="text-text">{section.content.projectType}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Project Description</div>
-                        <div className="text-text">{section.content.projectDescription}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Business Goals</div>
-                        <div className="text-text">{section.content.businessGoals}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Communication Goals</div>
-                        <div className="text-text">{section.content.communicationGoals}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Project KPI</div>
-                        <div className="text-text">{section.content.projectKPI}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Challenge</div>
-                        <div className="text-text">{section.content.challenge}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Timeline Expectations</div>
-                        <div className="text-text">{section.content.timelineExpectations}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Project Budget</div>
-                        <div className="text-text">{section.content.projectBudget}</div>
-                      </div>
-                    </div>
-                  )}
+          {/* Project Scope and Requirements */}
+          <Collapsible open={expandedSections.includes(2)} onOpenChange={() => toggleSection(2)}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <span className="font-semibold text-text">2. Project Scope and Requirements</span>
+              {expandedSections.includes(2) ? <ChevronUp className="h-5 w-5 text-text-muted" /> : <ChevronDown className="h-5 w-5 text-text-muted" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
+              <div className="space-y-4 text-sm">
+                <div><div className="font-medium text-text-muted mb-2">Agency Scope</div><div className="text-text">{brief.agencyScope}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Mandatories</div><div className="text-text">{brief.mandatories}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Technical Requirements</div><div className="text-text">{brief.technicalRequirements}</div></div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
-                  {section.id === 6 && section.content.touchpoints && (
-                    <div className="space-y-4">
-                      <div>
-                        <div className="font-medium text-text mb-2">Touchpoints</div>
-                        <div className="space-y-3">
-                          <div>
-                            <span className="font-medium text-text">Website: </span>
-                            <span className="text-text">{section.content.touchpoints.website}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-text">Email Marketing: </span>
-                            <span className="text-text">{section.content.touchpoints.emailMarketing}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-text">Social Media: </span>
-                            <span className="text-text">{section.content.touchpoints.socialMedia}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-text">Content Marketing: </span>
-                            <span className="text-text">{section.content.touchpoints.contentMarketing}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-text">Paid Advertising: </span>
-                            <span className="text-text">{section.content.touchpoints.paidAdvertising}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+          {/* Audience and Insights */}
+          <Collapsible open={expandedSections.includes(3)} onOpenChange={() => toggleSection(3)}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <span className="font-semibold text-text">3. Audience and Insights</span>
+              {expandedSections.includes(3) ? <ChevronUp className="h-5 w-5 text-text-muted" /> : <ChevronDown className="h-5 w-5 text-text-muted" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
+              <div className="space-y-4 text-sm">
+                <div><div className="font-medium text-text-muted mb-2">Target Audience</div><div className="text-text">{brief.targetAudience}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Internal Stakeholders</div><div className="text-text">{brief.internalStakeholders}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Consumer Insight</div><div className="text-text">{brief.consumerInsight}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">RTB Features</div><div className="text-text">{brief.rtbFeatures}</div></div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
-                  {section.id === 7 && (
-                    <div className="space-y-4">
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Final Notes</div>
-                        <div className="text-text">{section.content.finalNotes}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Links</div>
-                        <div className="space-y-1">
-                          {section.content.links?.map((link, index) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <div className="w-4 h-4 bg-gray-300 rounded"></div>
-                              <span className="text-text">{link}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-text-muted mb-2">Attachments</div>
-                        <div className="space-y-1">
-                          {section.content.attachments?.map((file, index) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <div className="w-4 h-4 bg-blue-300 rounded"></div>
-                              <span className="text-text">{file}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+          {/* Strategic Input */}
+          <Collapsible open={expandedSections.includes(4)} onOpenChange={() => toggleSection(4)}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <span className="font-semibold text-text">4. Strategic Input</span>
+              {expandedSections.includes(4) ? <ChevronUp className="h-5 w-5 text-text-muted" /> : <ChevronDown className="h-5 w-5 text-text-muted" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
+              <div className="space-y-4 text-sm">
+                <div><div className="font-medium text-text-muted mb-2">Key Message</div><div className="text-text">{brief.keyMessage}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Value Proposition</div><div className="text-text">{brief.valueProposition}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Tone of Voice</div><div className="text-text">{brief.toneOfVoice}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Market Competition</div><div className="text-text">{brief.marketCompetition}</div></div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
-                  {/* Generic content for other sections */}
-                  {section.id !== 1 && section.id !== 6 && section.id !== 7 && (
-                    <div className="space-y-4">
-                      {Object.entries(section.content).map(([key, value]) => (
-                        <div key={key}>
-                          <div className="font-medium text-text-muted mb-2 capitalize">
-                            {key.replace(/([A-Z])/g, " $1").trim()}
-                          </div>
-                          <div className="text-text">{value as string}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
+          {/* References and Context */}
+          <Collapsible open={expandedSections.includes(5)} onOpenChange={() => toggleSection(5)}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <span className="font-semibold text-text">5. References and Context</span>
+              {expandedSections.includes(5) ? <ChevronUp className="h-5 w-5 text-text-muted" /> : <ChevronDown className="h-5 w-5 text-text-muted" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
+              <div className="space-y-4 text-sm">
+                <div><div className="font-medium text-text-muted mb-2">Inspirations</div><div className="text-text">{brief.inspirations}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Past Communication</div><div className="text-text">{brief.pastCommunication}</div></div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Channels and Touchpoints */}
+          <Collapsible open={expandedSections.includes(6)} onOpenChange={() => toggleSection(6)}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <span className="font-semibold text-text">6. Channels and Touchpoints</span>
+              {expandedSections.includes(6) ? <ChevronUp className="h-5 w-5 text-text-muted" /> : <ChevronDown className="h-5 w-5 text-text-muted" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
+              <div className="space-y-4 text-sm">
+                <div><div className="font-medium text-text mb-2">Touchpoints</div><div className="text-text">{brief.touchpoints}</div></div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Final Notes and Attachments */}
+          <Collapsible open={expandedSections.includes(7)} onOpenChange={() => toggleSection(7)}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <span className="font-semibold text-text">7. Final Notes and Attachments</span>
+              {expandedSections.includes(7) ? <ChevronUp className="h-5 w-5 text-text-muted" /> : <ChevronDown className="h-5 w-5 text-text-muted" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
+              <div className="space-y-4 text-sm">
+                <div><div className="font-medium text-text-muted mb-2">Final Notes</div><div className="text-text">{brief.finalNotes}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Links</div><div className="space-y-1">{brief.links?.map((link: string, index: number) => (<div key={index} className="flex items-center space-x-2"><div className="w-4 h-4 bg-gray-300 rounded"></div><span className="text-text">{link}</span></div>))}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Attachments</div><div className="space-y-1">{brief.attachments?.map((file: string, index: number) => (<div key={index} className="flex items-center space-x-2"><div className="w-4 h-4 bg-blue-300 rounded"></div><span className="text-text">{file}</span></div>))}</div></div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </DialogContent>
     </Dialog>

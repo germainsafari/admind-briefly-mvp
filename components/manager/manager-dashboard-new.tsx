@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Download, Share2, Plus, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import { ShareBriefModal } from "./share-brief-modal"
 import { DownloadBriefModal } from "./download-brief-modal"
 import { BriefSummaryPanel } from "./brief-summary-panel"
 import { AddClientModal } from "./add-client-modal"
+import { ClientsList } from "@/components/admin/clients-list"
 
 interface Brief {
   id: string
@@ -100,6 +101,8 @@ const mockBriefs: Brief[] = [
 const briefTypes = ["General", "UX/UI Website", "Event/Tradeshow", "Video/Animation", "Digital Paid Campaign"]
 
 export function ManagerDashboardNew() {
+  // TODO: Integrate role-based access control (RBAC) here using user context or hook
+  // Example: const { role } = useAuth();
   const [activeTab, setActiveTab] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
@@ -107,20 +110,41 @@ export function ManagerDashboardNew() {
   const [downloadModalOpen, setDownloadModalOpen] = useState(false)
   const [summaryPanelOpen, setSummaryPanelOpen] = useState(false)
   const [addClientModalOpen, setAddClientModalOpen] = useState(false)
-  const [selectedBrief, setSelectedBrief] = useState<Brief | null>(null)
+  const [selectedBrief, setSelectedBrief] = useState<any | null>(null)
+  const [briefs, setBriefs] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    Promise.all([
+      fetch('/api/briefs').then(res => res.json()),
+      fetch('/api/clients').then(res => res.json()),
+    ]).then(([briefsData, clientsData]) => {
+      setBriefs(briefsData)
+      setClients(clientsData)
+      setLoading(false)
+    })
+  }, [])
+
+  // Show all briefs regardless of creator
+  const filteredBriefs = briefs
+    .filter((brief: any) => {
+      if (activeTab === "new" && brief.status !== "New") return false
+      if (selectedTypes.length > 0 && !selectedTypes.includes(brief.type)) return false
+      return true
+    })
+
+  // Move pagination variables after filteredBriefs is defined
+  const [currentPage, setCurrentPage] = useState(1);
+  const briefsPerPage = 15;
+  const totalPages = Math.ceil(filteredBriefs.length / briefsPerPage);
+  const paginatedBriefs = filteredBriefs.slice((currentPage - 1) * briefsPerPage, currentPage * briefsPerPage);
 
   const briefCounts = {
-    all: mockBriefs.length,
-    new: mockBriefs.filter((b) => b.status === "New").length,
-    created: mockBriefs.filter((b) => b.creator.name === "Martyna Florek").length,
+    all: briefs.length,
+    new: briefs.filter((b: any) => b.status === "New").length,
   }
-
-  const filteredBriefs = mockBriefs.filter((brief) => {
-    if (activeTab === "new" && brief.status !== "New") return false
-    if (activeTab === "created" && brief.creator.name !== "Martyna Florek") return false
-    if (selectedTypes.length > 0 && !selectedTypes.includes(brief.type)) return false
-    return true
-  })
 
   const getStatusBadge = (status: Brief["status"]) => {
     switch (status) {
@@ -153,6 +177,10 @@ export function ManagerDashboardNew() {
   const clearFilters = () => {
     setSelectedTypes([])
   }
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
   return (
     <div className="space-y-8">
@@ -255,16 +283,6 @@ export function ManagerDashboardNew() {
                   >
                     New ({briefCounts.new})
                   </button>
-                  <button
-                    onClick={() => setActiveTab("created")}
-                    className={`pb-2 border-b-2 font-medium text-sm ${
-                      activeTab === "created"
-                        ? "border-text text-text"
-                        : "border-transparent text-text-muted hover:text-text"
-                    }`}
-                  >
-                    Created by you ({briefCounts.created})
-                  </button>
                 </div>
               </div>
 
@@ -275,10 +293,6 @@ export function ManagerDashboardNew() {
                 >
                   <Plus className="icon-20 mr-4" />
                   Add new client
-                </Button>
-                <Button className="btn-solid-dark hover:btn-solid-dark">
-                  <Plus className="icon-20 mr-4" />
-                  Create new brief
                 </Button>
               </div>
             </div>
@@ -296,87 +310,106 @@ export function ManagerDashboardNew() {
             <Card className="card-bg shadow-card border-0">
               <CardContent className="p-0">
                 <div className="space-y-0">
-                  {filteredBriefs.map((brief, index) => (
-                    <motion.div
-                      key={brief.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={cn(
-                        "row-hover transition-colors duration-150",
-                        index !== filteredBriefs.length - 1 && "border-b border-gray-100",
-                      )}
-                    >
-                      <div className="grid grid-cols-12 gap-4 items-center p-6">
-                        {/* Project Name & Type */}
-                        <div className="col-span-4">
-                          <div className="space-y-1">
-                            <div className="font-medium text-text">{brief.projectName}</div>
-                            <div className="text-sm text-text-muted">{brief.type}</div>
+                  {loading ? (
+                    <div className="text-center py-8 text-text-muted">Loading...</div>
+                  ) : paginatedBriefs.length === 0 ? (
+                    <div className="text-center py-8 text-text-muted">No briefs found.</div>
+                  ) : (
+                    paginatedBriefs.map((brief, index) => (
+                      <motion.div
+                        key={brief.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className={cn(
+                          "row-hover transition-colors duration-150",
+                          index !== paginatedBriefs.length - 1 && "border-b border-gray-100",
+                        )}
+                      >
+                        <div className="grid grid-cols-12 gap-4 items-center p-6">
+                          {/* Project Name & Type */}
+                          <div className="col-span-4">
+                            <div className="space-y-1">
+                              <div className="font-medium text-text">{brief.projectName || brief.project_name || "Untitled Project"}</div>
+                              <div className="text-sm text-text-muted">{brief.type || "-"}</div>
+                            </div>
+                          </div>
+
+                          {/* Status */}
+                          <div className="col-span-2">{getStatusBadge(brief.status)}</div>
+
+                          {/* Creator */}
+                          <div className="col-span-2">
+                            <div className="flex items-center space-x-2">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={brief.creator?.avatar || "/placeholder.svg"} />
+                                <AvatarFallback>{brief.creator?.name?.substring(0, 2) || "M"}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm text-text">{brief.creator?.name || "Max"}</span>
+                            </div>
+                          </div>
+
+                          {/* Date */}
+                          <div className="col-span-2">
+                            <span className="text-sm text-text">{brief.date ? new Date(brief.date).toLocaleDateString("en-GB") : "-"}</span>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="col-span-2 flex justify-end space-x-2">
+                            <Button variant="ghost" size="icon" onClick={() => handleShare(brief)} className="h-8 w-8">
+                              <Share2 className="icon-20" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDownload(brief)} className="h-8 w-8">
+                              <Download className="icon-20" />
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleSummary(brief)}>
+                              See Summary
+                            </Button>
                           </div>
                         </div>
-
-                        {/* Status */}
-                        <div className="col-span-2">{getStatusBadge(brief.status)}</div>
-
-                        {/* Creator */}
-                        <div className="col-span-2">
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={brief.creator.avatar || "/placeholder.svg"} />
-                              <AvatarFallback>{brief.creator.name.substring(0, 2)}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm text-text">{brief.creator.name}</span>
-                          </div>
-                        </div>
-
-                        {/* Date */}
-                        <div className="col-span-2">
-                          <span className="text-sm text-text">{new Date(brief.date).toLocaleDateString("en-GB")}</span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="col-span-2 flex justify-end space-x-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleShare(brief)} className="h-8 w-8">
-                            <Share2 className="icon-20" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDownload(brief)} className="h-8 w-8">
-                            <Download className="icon-20" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleSummary(brief)}>
-                            See Summary
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between pt-4">
-              <Button variant="ghost" className="text-text-muted flex items-center">
-                <ChevronLeft className="icon-20 mr-4" />
-                Back
-              </Button>
-              <div className="flex space-x-2">
-                {[1, 2, 3, "...", 8, 9].map((page, index) => (
-                  <Button
-                    key={index}
-                    variant={page === 1 ? "default" : "ghost"}
-                    size="sm"
-                    className={page === 1 ? "btn-solid-dark" : "text-text-muted"}
-                  >
-                    {page}
-                  </Button>
-                ))}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <Button
+                  variant="ghost"
+                  className="text-text-muted flex items-center"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="icon-20 mr-4" />
+                  Previous
+                </Button>
+                <div className="flex space-x-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? "default" : "ghost"}
+                      size="sm"
+                      className={page === currentPage ? "btn-solid-dark" : "text-text-muted"}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="ghost"
+                  className="text-text-muted flex items-center"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="icon-20 ml-4" />
+                </Button>
               </div>
-              <Button variant="ghost" className="text-text-muted flex items-center">
-                Next
-                <ChevronRight className="icon-20 ml-4" />
-              </Button>
-            </div>
+            )}
           </div>
         </div>
       </div>

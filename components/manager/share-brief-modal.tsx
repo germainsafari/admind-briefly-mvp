@@ -79,9 +79,14 @@ export function ShareBriefModal({ open, onOpenChange, brief }: ShareBriefModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        aria-labelledby="share-brief-title"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
-          <DialogTitle className="text-xl">Select with who you want to share this brief</DialogTitle>
+          <DialogTitle id="share-brief-title" className="text-xl">Share Brief</DialogTitle>
+          <p id="share-brief-desc" className="text-gray-600 mt-2">Choose who you'd like to share this brief with.</p>
         </DialogHeader>
 
         <div className="space-y-6 mt-6">
