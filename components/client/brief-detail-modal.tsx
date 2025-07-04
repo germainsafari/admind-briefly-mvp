@@ -5,14 +5,16 @@ import { ChevronDown, ChevronUp, X } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 interface BriefDetailModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   brief: any // Use the BriefData type if available
+  error?: string | null
 }
 
-export function BriefDetailModal({ open, onOpenChange, brief }: BriefDetailModalProps) {
+export function BriefDetailModal({ open, onOpenChange, brief, error }: BriefDetailModalProps) {
   const [expandedSections, setExpandedSections] = useState<number[]>([1])
 
   const toggleSection = (sectionId: number) => {
@@ -23,21 +25,20 @@ export function BriefDetailModal({ open, onOpenChange, brief }: BriefDetailModal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-4xl max-h-[90vh] overflow-y-auto card-bg"
-        aria-labelledby="brief-detail-title"
-        aria-describedby={undefined}
-      >
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto card-bg">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle id="brief-detail-title" className="text-2xl text-text">Complete Brief Details</DialogTitle>
+            <DialogTitle className="text-2xl text-text">Complete Brief Details</DialogTitle>
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
-        <p id="brief-detail-desc" className="sr-only">Full details of the submitted creative brief, including all sections and attachments.</p>
+        <p className="sr-only">Full details of the submitted creative brief, including all sections and attachments.</p>
 
+        {error ? (
+          <div className="p-8 text-center text-red-600 text-lg font-semibold">{error}</div>
+        ) : (
         <div className="space-y-4 mt-6">
           {/* Project Overview */}
           <Collapsible open={expandedSections.includes(1)} onOpenChange={() => toggleSection(1)}>
@@ -144,11 +145,12 @@ export function BriefDetailModal({ open, onOpenChange, brief }: BriefDetailModal
               <div className="space-y-4 text-sm">
                 <div><div className="font-medium text-text-muted mb-2">Final Notes</div><div className="text-text">{brief.finalNotes}</div></div>
                 <div><div className="font-medium text-text-muted mb-2">Links</div><div className="space-y-1">{brief.links?.map((link: string, index: number) => (<div key={index} className="flex items-center space-x-2"><div className="w-4 h-4 bg-gray-300 rounded"></div><span className="text-text">{link}</span></div>))}</div></div>
-                <div><div className="font-medium text-text-muted mb-2">Attachments</div><div className="space-y-1">{brief.attachments?.map((file: string, index: number) => (<div key={index} className="flex items-center space-x-2"><div className="w-4 h-4 bg-blue-300 rounded"></div><span className="text-text">{file}</span></div>))}</div></div>
+                <div><div className="font-medium text-text-muted mb-2">Attachments</div><div className="space-y-1">{brief.attachments?.map((file: any, index: number) => (<div key={index} className="flex items-center space-x-2"><div className="w-4 h-4 bg-blue-300 rounded"></div><span className="text-text">{typeof file === "string" ? file : (file && typeof file === "object" && "name" in file) ? file.name : ""}</span></div>))}</div></div>
               </div>
             </CollapsibleContent>
           </Collapsible>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   )

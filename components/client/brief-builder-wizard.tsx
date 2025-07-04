@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth-context"
 
 interface BriefBuilderWizardProps {
   onClose: () => void
+  initialData?: Partial<BriefData>
 }
 
 interface BriefData {
@@ -63,36 +64,36 @@ const steps = [
   { id: 8, title: "Brief summary", completed: false },
 ]
 
-export function BriefBuilderWizard({ onClose }: BriefBuilderWizardProps) {
+export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardProps) {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1)
   const [briefData, setBriefData] = useState<BriefData>({
-    projectName: "",
-    projectType: "",
-    projectDescription: "",
-    businessGoals: "",
-    communicationGoals: "",
-    projectKPI: "",
-    challenge: "",
-    timelineExpectations: "",
-    projectBudget: "",
-    agencyScope: "",
-    mandatories: "",
-    technicalRequirements: "",
-    targetAudience: "",
-    internalStakeholders: "",
-    consumerInsight: "",
-    rtbFeatures: "",
-    keyMessage: "",
-    valueProposition: "",
-    toneOfVoice: "",
-    marketCompetition: "",
-    inspirations: "",
-    pastCommunication: "",
-    touchpoints: "",
-    finalNotes: "",
-    attachments: [],
-    links: [""],
+    projectName: initialData?.projectName || "",
+    projectType: initialData?.projectType || "",
+    projectDescription: initialData?.projectDescription || "",
+    businessGoals: initialData?.businessGoals || "",
+    communicationGoals: initialData?.communicationGoals || "",
+    projectKPI: initialData?.projectKPI || "",
+    challenge: initialData?.challenge || "",
+    timelineExpectations: initialData?.timelineExpectations || "",
+    projectBudget: initialData?.projectBudget || "",
+    agencyScope: initialData?.agencyScope || "",
+    mandatories: initialData?.mandatories || "",
+    technicalRequirements: initialData?.technicalRequirements || "",
+    targetAudience: initialData?.targetAudience || "",
+    internalStakeholders: initialData?.internalStakeholders || "",
+    consumerInsight: initialData?.consumerInsight || "",
+    rtbFeatures: initialData?.rtbFeatures || "",
+    keyMessage: initialData?.keyMessage || "",
+    valueProposition: initialData?.valueProposition || "",
+    toneOfVoice: initialData?.toneOfVoice || "",
+    marketCompetition: initialData?.marketCompetition || "",
+    inspirations: initialData?.inspirations || "",
+    pastCommunication: initialData?.pastCommunication || "",
+    touchpoints: initialData?.touchpoints || "",
+    finalNotes: initialData?.finalNotes || "",
+    attachments: initialData?.attachments || [],
+    links: initialData?.links || [""]
   })
 
   const fileInputRef = useRef<HTMLInputElement>(null)

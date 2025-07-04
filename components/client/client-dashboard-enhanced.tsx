@@ -12,6 +12,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { BriefBuilderWizard } from "./brief-builder-wizard"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { BriefDetailModal } from "./brief-detail-modal"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface ClientBrief {
   id: string
@@ -33,36 +35,54 @@ export function ClientDashboardEnhanced() {
   const [showBriefBuilder, setShowBriefBuilder] = useState(false)
   const [hoveredBrief, setHoveredBrief] = useState<string | null>(null)
   const [formattedDate, setFormattedDate] = useState<string>("")
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [selectedBrief, setSelectedBrief] = useState<any | null>(null)
+  const [loadingBrief, setLoadingBrief] = useState(false)
+  const [modalError, setModalError] = useState<string | null>(null)
+  const [editBriefData, setEditBriefData] = useState<any | null>(null)
+  const [showEditWizard, setShowEditWizard] = useState(false)
+
+  const fetchBriefs = async () => {
+    try {
+      const res = await fetch('/api/briefs')
+      if (!res.ok) {
+        setBriefs([])
+        return
+      }
+      const data = await res.json()
+      setBriefs(
+        Array.isArray(data)
+          ? data.map((brief) => ({
+              id: brief.id,
+              projectName: brief.project_name,
+              type: (brief.project_type || "").replace(/_/g, "/"),
+              status: brief.status === "New" ? "Draft" : brief.status, // Map as needed
+              progress: brief.progress,
+              date: brief.created_at,
+              editable: true, // Set based on your logic
+            }))
+          : []
+      )
+    } catch {
+      setBriefs([])
+    }
+  }
 
   useEffect(() => {
-    fetch('/api/briefs')
-      .then(async res => {
-        if (!res.ok) {
-          return [];
+    fetchBriefs()
+  }, [])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && briefs.length > 0) {
+      const formattedDates = briefs.map(brief => {
+        if (brief.date) {
+          return new Date(brief.date).toLocaleDateString("en-GB")
         }
-        try {
-          return await res.json();
-        } catch {
-          return [];
-        }
+        return "-"
       })
-      .then((data) => {
-        setBriefs(
-          Array.isArray(data)
-            ? data.map((brief) => ({
-                id: brief.id,
-                projectName: brief.project_name,
-                type: (brief.project_type || "").replace(/_/g, "/"),
-                status: brief.status === "New" ? "Draft" : brief.status, // Map as needed
-                progress: brief.progress,
-                date: brief.created_at,
-                editable: true, // Set based on your logic
-              }))
-            : []
-        );
-      })
-      .catch(() => setBriefs([]));
-  }, []);
+      setFormattedDate(formattedDates.join(", "))
+    }
+  }, [briefs])
 
   const briefCounts = {
     all: briefs.length,
@@ -92,29 +112,107 @@ export function ClientDashboardEnhanced() {
     }
   }
 
-  const handleAction = (action: string, brief: ClientBrief) => {
-    console.log(`${action} brief:`, brief.id)
-    // Handle actions here
+  const handleAction = async (action: string, brief: ClientBrief) => {
+    if (action === "delete") {
+      try {
+        await fetch('/api/briefs', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: typeof brief.id === 'string' ? parseInt(brief.id, 10) : brief.id })
+        })
+        await fetchBriefs()
+      } catch {
+        // Optionally show error
+      }
+    } else {
+      console.log(`${action} brief:`, brief.id)
+    }
   }
 
   const clearFilters = () => {
     setSelectedTypes([])
   }
 
-  useEffect(() => {
-    if (briefs.length > 0) {
-      const formattedDates = briefs.map(brief => {
-        if (brief.date) {
-          return new Date(brief.date).toLocaleDateString("en-GB")
-        }
-        return "-"
-      })
-      setFormattedDate(formattedDates.join(", "))
+  const handleSeeSummary = async (brief: ClientBrief) => {
+    setLoadingBrief(true)
+    setDetailModalOpen(true)
+    setModalError(null)
+    try {
+      const briefId = Number(brief.id)
+      const res = await fetch(`/api/briefs/${briefId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSelectedBrief(data)
+      } else if (res.status === 404) {
+        setModalError("This brief no longer exists.")
+        setSelectedBrief(null)
+      } else {
+        setModalError("Failed to load brief details.")
+        setSelectedBrief(null)
+      }
+    } catch {
+      setModalError("Failed to load brief details.")
+      setSelectedBrief(null)
     }
-  }, [briefs])
+    setLoadingBrief(false)
+  }
+
+  // Duplicate a brief (creates a new draft with the same data, but no id or date)
+  const handleDuplicate = (brief: any) => {
+    const {
+      id, date, status, progress, editable, ...rest
+    } = brief;
+    setEditBriefData({
+      ...rest,
+      status: "Draft",
+      // Map all fields for initialData
+      projectName: brief.projectName || brief.project_name || "",
+      projectType: brief.type || brief.project_type || "",
+      projectDescription: brief.projectDescription || brief.project_description || "",
+      businessGoals: brief.businessGoals || brief.business_goals || "",
+      communicationGoals: brief.communicationGoals || brief.communication_goals || "",
+      projectKPI: brief.projectKPI || brief.project_kpi || "",
+      challenge: brief.challenge || "",
+      timelineExpectations: brief.timelineExpectations || brief.timeline_expectations || "",
+      projectBudget: brief.projectBudget || brief.project_budget || "",
+      agencyScope: brief.agencyScope || brief.agency_scope || "",
+      mandatories: brief.mandatories || "",
+      technicalRequirements: brief.technicalRequirements || brief.technical_requirements || "",
+      targetAudience: brief.targetAudience || brief.target_audience || "",
+      internalStakeholders: brief.internalStakeholders || brief.internal_stakeholders || "",
+      consumerInsight: brief.consumerInsight || brief.consumer_insight || "",
+      rtbFeatures: brief.rtbFeatures || brief.rtb_features || "",
+      keyMessage: brief.keyMessage || brief.key_message || "",
+      valueProposition: brief.valueProposition || brief.value_proposition || "",
+      toneOfVoice: brief.toneOfVoice || brief.tone_of_voice || "",
+      marketCompetition: brief.marketCompetition || brief.market_competition || "",
+      inspirations: brief.inspirations || "",
+      pastCommunication: brief.pastCommunication || brief.past_communication || "",
+      touchpoints: brief.touchpoints || "",
+      finalNotes: brief.finalNotes || brief.final_notes || "",
+      links: brief.links || [],
+      attachments: brief.attachments || [],
+    })
+    setShowEditWizard(true)
+  }
+
+  // Update/Edit a sent brief
+  const handleUpdate = (brief: any) => {
+    setEditBriefData({
+      ...brief,
+      projectName: brief.projectName,
+      projectType: brief.type,
+      // Map all other fields as needed
+    })
+    setShowEditWizard(true)
+  }
 
   if (showBriefBuilder) {
     return <BriefBuilderWizard onClose={() => setShowBriefBuilder(false)} />
+  }
+
+  if (showEditWizard && editBriefData) {
+    return <BriefBuilderWizard onClose={() => { setShowEditWizard(false); setEditBriefData(null); fetchBriefs(); }} initialData={editBriefData} />
   }
 
   return (
@@ -257,92 +355,128 @@ export function ClientDashboardEnhanced() {
 
             {/* Briefs List */}
             <div className="space-y-2">
-              {filteredBriefs.map((brief, index) => (
-                <motion.div
-                  key={brief.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onMouseEnter={() => setHoveredBrief(brief.id)}
-                  onMouseLeave={() => setHoveredBrief(null)}
-                  className="relative"
-                >
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Project Name & Type */}
-                        <div className="col-span-5">
-                          <div className="space-y-1">
-                            <div className="font-medium text-gray-900">{brief.projectName}</div>
-                            <div className="text-sm text-gray-500">{brief.type}</div>
+              <TooltipProvider>
+                {filteredBriefs.map((brief, index) => (
+                  <motion.div
+                    key={brief.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onMouseEnter={() => setHoveredBrief(brief.id)}
+                    onMouseLeave={() => setHoveredBrief(null)}
+                    className="relative"
+                  >
+                    <Card className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-12 gap-4 items-center">
+                          {/* Project Name & Type */}
+                          <div className="col-span-5">
+                            <div className="space-y-1">
+                              <div className="font-medium text-gray-900">{brief.projectName}</div>
+                              <div className="text-sm text-gray-500">{brief.type}</div>
+                            </div>
+                          </div>
+
+                          {/* Status */}
+                          <div className="col-span-2">
+                            <div className="flex items-center space-x-2">
+                              {getStatusBadge(brief.status)}
+                            </div>
+                          </div>
+
+                          {/* Date */}
+                          <div className="col-span-3">
+                            <span className="text-sm">
+                              {brief.date ? new Date(brief.date).toLocaleDateString("en-GB") : "-"}
+                            </span>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="col-span-2 flex justify-end space-x-2">
+                            {/* Delete Draft (only for Drafts) */}
+                            {brief.status === "Draft" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" onClick={() => handleAction("delete", brief)}>
+                                    <Trash2 className="h-5 w-5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete draft</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {/* Duplicate (for all briefs) */}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => handleDuplicate(brief)}>
+                                  <Copy className="h-5 w-5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Duplicate</TooltipContent>
+                            </Tooltip>
+                            {/* Update (only for Sent) */}
+                            {brief.status === "Sent" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" onClick={() => handleUpdate(brief)}>
+                                    <RotateCcw className="h-5 w-5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Update</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {/* See Summary */}
+                            <Button variant="outline" size="sm" onClick={() => handleSeeSummary(brief)}>
+                              See Summary
+                            </Button>
                           </div>
                         </div>
-
-                        {/* Status */}
-                        <div className="col-span-2">
-                          <div className="flex items-center space-x-2">
-                            {getStatusBadge(brief.status)}
-                          </div>
-                        </div>
-
-                        {/* Date */}
-                        <div className="col-span-3">
-                          <span className="text-sm">
-                            {brief.date ? new Date(brief.date).toLocaleDateString("en-GB") : "-"}
-                          </span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="col-span-2 flex justify-end space-x-2">
-                          <Button variant="outline" size="sm">
-                            See Summary
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Action Tooltips */}
-                  {hoveredBrief === brief.id && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex space-x-1 z-10">
-                      {brief.status === "Draft" && (
-                        <>
-                          <div className="bg-black text-white text-xs px-2 py-1 rounded shadow-lg">
-                            <button
-                              onClick={() => handleAction("delete", brief as ClientBrief)}
-                              className="flex items-center space-x-1 hover:text-red-300"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              <span>Delete draft</span>
-                            </button>
-                          </div>
-                          <div className="bg-black text-white text-xs px-2 py-1 rounded shadow-lg">
-                            <button
-                              onClick={() => handleAction("duplicate", brief as ClientBrief)}
-                              className="flex items-center space-x-1"
-                            >
-                              <Copy className="h-3 w-3" />
-                              <span>Duplicate</span>
-                            </button>
-                          </div>
-                        </>
-                      )}
-                      {brief.status === "Sent" && (
-                        <div className="bg-black text-white text-xs px-2 py-1 rounded shadow-lg">
-                          <button onClick={() => handleAction("update", brief as ClientBrief)} className="flex items-center space-x-1">
-                            <RotateCcw className="h-3 w-3" />
-                            <span>Update</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </TooltipProvider>
             </div>
           </div>
         </div>
       </div>
+      {/* Brief Detail Modal */}
+      <BriefDetailModal
+        open={detailModalOpen}
+        onOpenChange={(open) => {
+          setDetailModalOpen(open)
+          setModalError(null)
+          if (!open) setSelectedBrief(null)
+        }}
+        brief={selectedBrief ? {
+          projectName: selectedBrief.project_name || selectedBrief.projectName || "",
+          projectType: selectedBrief.project_type || selectedBrief.projectType || "",
+          projectDescription: selectedBrief.project_description || selectedBrief.projectDescription || "",
+          businessGoals: selectedBrief.business_goals || selectedBrief.businessGoals || "",
+          communicationGoals: selectedBrief.communication_goals || selectedBrief.communicationGoals || "",
+          projectKPI: selectedBrief.project_kpi || selectedBrief.projectKPI || "",
+          challenge: selectedBrief.challenge || "",
+          timelineExpectations: selectedBrief.timeline_expectations || selectedBrief.timelineExpectations || "",
+          projectBudget: selectedBrief.project_budget || selectedBrief.projectBudget || "",
+          agencyScope: selectedBrief.agency_scope || selectedBrief.agencyScope || "",
+          mandatories: selectedBrief.mandatories || "",
+          technicalRequirements: selectedBrief.technical_requirements || selectedBrief.technicalRequirements || "",
+          targetAudience: selectedBrief.target_audience || selectedBrief.targetAudience || "",
+          internalStakeholders: selectedBrief.internal_stakeholders || selectedBrief.internalStakeholders || "",
+          consumerInsight: selectedBrief.consumer_insight || selectedBrief.consumerInsight || "",
+          rtbFeatures: selectedBrief.rtb_features || selectedBrief.rtbFeatures || "",
+          keyMessage: selectedBrief.key_message || selectedBrief.keyMessage || "",
+          valueProposition: selectedBrief.value_proposition || selectedBrief.valueProposition || "",
+          toneOfVoice: selectedBrief.tone_of_voice || selectedBrief.toneOfVoice || "",
+          marketCompetition: selectedBrief.market_competition || selectedBrief.marketCompetition || "",
+          inspirations: selectedBrief.inspirations || "",
+          pastCommunication: selectedBrief.past_communication || selectedBrief.pastCommunication || "",
+          touchpoints: selectedBrief.touchpoints || "",
+          finalNotes: selectedBrief.final_notes || selectedBrief.finalNotes || "",
+          links: selectedBrief.links || [],
+          attachments: selectedBrief.attachments || [],
+        } : loadingBrief ? { projectName: 'Loading...', projectType: '', projectDescription: '' } : {}}
+        error={modalError}
+      />
     </div>
   )
 }

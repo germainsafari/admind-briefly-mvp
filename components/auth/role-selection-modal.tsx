@@ -68,14 +68,10 @@ export function RoleSelectionModal({ open, onOpenChange }: RoleSelectionModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-2xl"
-        aria-labelledby="role-selection-title"
-        aria-describedby={undefined}
-      >
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle id="role-selection-title" className="text-2xl text-center">Select Your Role</DialogTitle>
-          <p id="role-selection-desc" className="text-center text-gray-600 mt-2">Choose your role to access the appropriate dashboard</p>
+          <DialogTitle className="text-2xl text-center">Select Your Role</DialogTitle>
+          <p className="text-center text-gray-600 mt-2">Choose your role to access the appropriate dashboard</p>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">

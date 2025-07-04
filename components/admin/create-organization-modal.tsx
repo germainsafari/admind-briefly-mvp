@@ -14,6 +14,9 @@ interface CreateOrganizationModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onOrganizationCreated?: () => void
+  initialData?: Partial<OrganizationData>
+  onSave?: (data: OrganizationData) => void
+  isEdit?: boolean
 }
 
 interface OrganizationData {
@@ -23,13 +26,13 @@ interface OrganizationData {
   emails: string[]
 }
 
-export function CreateOrganizationModal({ open, onOpenChange, onOrganizationCreated }: CreateOrganizationModalProps) {
+export function CreateOrganizationModal({ open, onOpenChange, onOrganizationCreated, initialData, onSave, isEdit }: CreateOrganizationModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [orgData, setOrgData] = useState<OrganizationData>({
-    name: "",
-    location: "",
+    name: initialData?.name || "",
+    location: initialData?.location || "",
     logo: null,
-    emails: [""],
+    emails: initialData?.emails || [""]
   })
   const { toast } = useToast();
 
@@ -73,6 +76,10 @@ export function CreateOrganizationModal({ open, onOpenChange, onOrganizationCrea
   }
 
   const handleSave = async () => {
+    if (isEdit && onSave) {
+      await onSave(orgData)
+      return
+    }
     try {
       const response = await fetch("/api/organizations", {
         method: "POST",
@@ -99,8 +106,8 @@ export function CreateOrganizationModal({ open, onOpenChange, onOrganizationCrea
         aria-describedby={undefined}
       >
         <DialogHeader>
-          <DialogTitle id="create-org-title" className="sr-only">Create New Organization</DialogTitle>
-          <DialogDescription id="create-org-desc">Fill in the details to create a new organization.</DialogDescription>
+          <DialogTitle id="create-org-title" className="sr-only">{isEdit ? "Edit Organization" : "Create New Organization"}</DialogTitle>
+          <DialogDescription id="create-org-desc">{isEdit ? "Edit the details of this organization." : "Fill in the details to create a new organization."}</DialogDescription>
         </DialogHeader>
 
         {/* Step Indicator */}
@@ -269,7 +276,7 @@ export function CreateOrganizationModal({ open, onOpenChange, onOrganizationCrea
               </Button>
             ) : (
               <Button onClick={handleSave} className="bg-brand-orange hover:bg-orange-600">
-                Save & Send Invites
+                {isEdit ? "Save Changes" : "Save & Send Invites"}
               </Button>
             )}
           </div>

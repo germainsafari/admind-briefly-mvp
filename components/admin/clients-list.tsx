@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Link from "next/link"
 
 interface Client {
   id: string
@@ -76,9 +77,11 @@ export function ClientsList() {
                   {/* Status & Actions */}
                   <div className="flex items-center justify-between">
                     {getStatusBadge(client.status)}
-                    <Button variant="outline" size="sm">
-                      See profile
-                    </Button>
+                    <Link href={`/admin/users/${client.id}?type=client`} passHref legacyBehavior>
+                      <Button as="a" variant="outline" size="sm">
+                        See profile
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>

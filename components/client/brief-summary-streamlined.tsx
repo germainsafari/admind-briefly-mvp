@@ -160,7 +160,7 @@ export function BriefSummaryStreamlined({ data = {}, onBack, onSubmit, submitSta
                           <span className="text-text">
                             {typeof file === "string"
                               ? file
-                              : file instanceof File
+                              : (file && typeof file === "object" && "name" in file)
                                 ? file.name
                                 : ""}
                           </span>

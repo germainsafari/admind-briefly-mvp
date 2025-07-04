@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Link from "next/link"
 
 interface Manager {
   id: string
@@ -13,11 +14,12 @@ interface Manager {
   title: string
   avatar?: string
   organization: string
+  organization_name?: string
   status: "active" | "invited" | "deactivated"
 }
 
 export function ManagersList() {
-  const [managers, setManagers] = useState([])
+  const [managers, setManagers] = useState<Manager[]>([])
   useEffect(() => {
     fetch('/api/managers')
       .then(res => res.json())
@@ -76,9 +78,11 @@ export function ManagersList() {
                   {/* Status & Actions */}
                   <div className="flex items-center justify-between">
                     {getStatusBadge(manager.status)}
-                    <Button variant="outline" size="sm">
-                      See profile
-                    </Button>
+                    <Link href={`/admin/users/${manager.id}?type=manager`} passHref legacyBehavior>
+                      <Button variant="outline" size="sm">
+                        See profile
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
