@@ -20,6 +20,7 @@ export function AddManagerModal({ open, onOpenChange, onManagerCreated }: AddMan
     organization: "",
     phone: "",
     avatar: null as File | null,
+    role: "manager", // Always manager, enforced in backend too
   })
   const [organizations, setOrganizations] = useState<{ id: string, name: string, logo?: string }[]>([])
 
@@ -43,6 +44,7 @@ export function AddManagerModal({ open, onOpenChange, onManagerCreated }: AddMan
           organization: managerData.organization,
           phone: managerData.phone,
           avatar: managerData.avatar, // null or file, not handled yet
+          // role is always manager, do not send from frontend
         }),
       });
       if (!response.ok) throw new Error('Failed to create manager');
@@ -55,6 +57,7 @@ export function AddManagerModal({ open, onOpenChange, onManagerCreated }: AddMan
         organization: "",
         phone: "",
         avatar: null,
+        role: "manager",
       });
     } catch (err: any) {
       alert(err.message || 'Error creating manager');
@@ -176,6 +179,10 @@ export function AddManagerModal({ open, onOpenChange, onManagerCreated }: AddMan
                 placeholder="+48 456 975 057"
                 className="border-gray-200"
               />
+            </div>
+
+            <div>
+              {/* Role selection removed: role is always manager, enforced in backend */}
             </div>
           </div>
         </div>

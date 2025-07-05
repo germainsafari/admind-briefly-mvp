@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
 
 interface Manager {
   id: string
@@ -18,13 +19,31 @@ interface Manager {
   status: "active" | "invited" | "deactivated"
 }
 
-export function ManagersList() {
+interface ManagersListProps {
+  onManagerDeleted?: () => void;
+}
+
+export function ManagersList({ onManagerDeleted }: ManagersListProps) {
   const [managers, setManagers] = useState<Manager[]>([])
-  useEffect(() => {
+  const { toast } = useToast();
+  const fetchManagers = () => {
     fetch('/api/managers')
       .then(res => res.json())
       .then(setManagers)
-  }, [])
+  }
+  useEffect(() => { fetchManagers() }, [])
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this manager?')) return;
+    const res = await fetch(`/api/managers/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      toast({ title: 'Manager deleted' });
+      fetchManagers();
+      if (onManagerDeleted) onManagerDeleted();
+    } else {
+      toast({ title: 'Failed to delete', variant: 'destructive' });
+    }
+  }
 
   const getStatusBadge = (status: Manager["status"]) => {
     switch (status) {
@@ -78,11 +97,16 @@ export function ManagersList() {
                   {/* Status & Actions */}
                   <div className="flex items-center justify-between">
                     {getStatusBadge(manager.status)}
-                    <Link href={`/admin/users/${manager.id}?type=manager`} passHref legacyBehavior>
-                      <Button variant="outline" size="sm">
-                        See profile
+                    <div className="flex gap-2">
+                      <Link href={`/admin/users/${manager.id}?type=manager`} passHref legacyBehavior>
+                        <Button variant="outline" size="sm">
+                          See profile
+                        </Button>
+                      </Link>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(manager.id)}>
+                        Delete
                       </Button>
-                    </Link>
+                    </div>
                   </div>
                 </div>
               </CardContent>

@@ -6,7 +6,7 @@ import { createContext, useContext, useState, useEffect } from "react"
 export type UserRole = "admin" | "manager" | "client"
 
 interface User {
-  id: string
+  id: number
   name: string
   email: string
   avatar?: string
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Simulate Microsoft login with role-based user data
     const mockUsers = {
       admin: {
-        id: "1",
+        id: 1,
         name: "Natalia Haligowska-Rzepa",
         email: "natalia@admind.com",
         avatar: "/placeholder.svg?height=32&width=32",
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: "admin" as UserRole,
       },
       manager: {
-        id: "2",
+        id: 3,
         name: "Max Johnson",
         email: "max@abb.com",
         avatar: "/placeholder.svg?height=32&width=32",
@@ -58,9 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: "manager" as UserRole,
       },
       client: {
-        id: "3",
-        name: "Sarah Wilson",
-        email: "sarah@client.com",
+        id: 2,
+        name: "Joanna Trela",
+        email: "joanna.trela@admind.com",
         avatar: "/placeholder.svg?height=32&width=32",
         organization: "Client Corp",
         role: "client" as UserRole,

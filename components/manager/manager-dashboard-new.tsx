@@ -16,6 +16,7 @@ import { DownloadBriefModal } from "./download-brief-modal"
 import { BriefSummaryPanel } from "./brief-summary-panel"
 import { AddClientModal } from "./add-client-modal"
 import { ClientsList } from "@/components/admin/clients-list"
+import { useAuth } from "@/lib/auth-context"
 
 interface Brief {
   id: string
@@ -101,8 +102,7 @@ const mockBriefs: Brief[] = [
 const briefTypes = ["General", "UX/UI Website", "Event/Tradeshow", "Video/Animation", "Digital Paid Campaign"]
 
 export function ManagerDashboardNew() {
-  // TODO: Integrate role-based access control (RBAC) here using user context or hook
-  // Example: const { role } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
@@ -187,10 +187,10 @@ export function ManagerDashboardNew() {
       {/* Header with Avatar */}
       <div className="space-y-4">
         <div className="flex items-center space-x-4">
-          <h1 className="text-5xl font-bold text-text">Hello Martyna!</h1>
+          <h1 className="text-5xl font-bold text-text">Hello {user?.name?.split(" ")[0] || "Manager"}!</h1>
           <Avatar className="h-10 w-10">
-            <AvatarImage src="/placeholder.svg?height=40&width=40" />
-            <AvatarFallback>MF</AvatarFallback>
+            <AvatarImage src={user?.avatar || "/placeholder.svg?height=40&width=40"} />
+            <AvatarFallback>{user?.name?.split(" ").map(n => n[0]).join("") || "M"}</AvatarFallback>
           </Avatar>
         </div>
         <p className="text-lg text-text-muted max-w-3xl">

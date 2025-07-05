@@ -43,6 +43,11 @@ enum ProjectType {
   Digital_Paid_Campaign
 }
 
+enum UserRole {
+  admin
+  manager
+}
+
 model Organization {
   id           Int        @id @default(autoincrement())
   name         String
@@ -63,6 +68,7 @@ model Manager {
   organization   Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
   organization_id Int?
   status         ManagerStatus @default(active)
+  role           UserRole      @default(manager)
   briefsCreated  Brief[]      @relation("BriefCreator")
   created_at     DateTime     @default(now())
   updated_at     DateTime     @updatedAt

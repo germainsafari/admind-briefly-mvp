@@ -65,7 +65,7 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
               </Button>
             </div>
           </div>
-          <SheetTitle className="text-2xl">Brief summary</SheetTitle>
+          <SheetTitle id="brief-summary-title" className="text-2xl">Brief summary</SheetTitle>
         </SheetHeader>
 
         <div className="mt-8 space-y-6">

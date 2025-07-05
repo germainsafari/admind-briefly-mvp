@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 function fetchOrganizations() {
   return fetch("/api/organizations").then(res => res.json());
@@ -17,6 +18,7 @@ export default function UserProfilePage({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showEdit, setShowEdit] = useState(false);
+  const { user: currentUser } = useAuth();
 
   function fetchManager(id) {
     return fetch(`/api/managers/${id}`).then(res => res.json());
@@ -40,6 +42,32 @@ export default function UserProfilePage({ params }) {
 
   if (loading) return <div className="p-8">Loading...</div>;
   if (error || !user) return <div className="p-8 text-red-600">{error || "User not found."}</div>;
+
+  // If the user is a client, show a client-specific profile
+  if (user.role === "client") {
+    return (
+      <div className="p-8">
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center space-x-6">
+            <img src={user.avatar || "/placeholder-user.jpg"} alt={user.name} className="h-24 w-24 rounded-full object-cover" />
+            <div>
+              <div className="text-2xl font-semibold">{user.name}</div>
+              <div className="text-gray-500">Client</div>
+              <div className="flex items-center mt-2">
+                <img src={user.organization_logo || "/placeholder-logo.png"} alt="org" className="h-6 w-6 mr-2" />
+                <span>{user.organization_name || user.organization}</span>
+              </div>
+              <div className="mt-2 text-sm text-gray-500">Email: <span className="font-semibold text-black">{user.email}</span></div>
+            </div>
+          </div>
+        </div>
+        <Link href="/client" className="text-black flex items-center space-x-1">
+          <span>&larr;</span>
+          <span>Back to dashboard</span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -72,12 +100,16 @@ export default function UserProfilePage({ params }) {
         <span>&larr;</span>
         <span>Back to dashboard</span>
       </Link>
-      {showEdit && <EditUserModal user={user} orgs={orgs} type={type} onClose={() => setShowEdit(false)} onSave={setUser} />}
+      {showEdit && <EditUserModal user={user} orgs={orgs} type={type} onClose={() => setShowEdit(false)} onSave={updated => {
+        setUser(updated);
+        if (currentUser && updated.id === currentUser.id) setCurrentUser(updated);
+      }} />}
     </div>
   );
 }
 
 function EditUserModal({ user, orgs, type, onClose, onSave }) {
+  const isAdmin = user.role === "admin";
   const [form, setForm] = useState({
     name: user.name,
     title: user.title || user.position || "",
@@ -86,9 +118,29 @@ function EditUserModal({ user, orgs, type, onClose, onSave }) {
     avatar: user.avatar,
   });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useState(null);
 
   const handleChange = e => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.url) {
+      setForm(f => ({ ...f, avatar: data.url }));
+    }
+    setUploading(false);
+  };
+
+  const handleAvatarButton = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
   };
 
   const handleSubmit = async e => {
@@ -96,10 +148,14 @@ function EditUserModal({ user, orgs, type, onClose, onSave }) {
     setSaving(true);
     // PATCH to the correct endpoint
     const endpoint = type === "manager" ? `/api/managers/${user.id}` : `/api/clients/${user.id}`;
+    const payload = { ...form };
+    if (isAdmin) {
+      delete payload.organization;
+    }
     const res = await fetch(endpoint, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -116,7 +172,16 @@ function EditUserModal({ user, orgs, type, onClose, onSave }) {
         <div className="text-2xl font-semibold mb-6">Edit member profile</div>
         <div className="flex flex-col items-center mb-6">
           <img src={form.avatar || "/placeholder-user.jpg"} alt="avatar" className="h-20 w-20 rounded-full object-cover mb-2" />
-          <button type="button" className="border px-3 py-1 rounded">Update image</button>
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            ref={el => fileInputRef.current = el}
+            onChange={handleAvatarChange}
+          />
+          <button type="button" className="border px-3 py-1 rounded" onClick={handleAvatarButton} disabled={uploading}>
+            {uploading ? 'Uploading...' : 'Update image'}
+          </button>
         </div>
         <label className="block mb-2">Enter name and surname
           <input name="name" value={form.name} onChange={handleChange} className="w-full border rounded px-3 py-2 mt-1" />
@@ -125,19 +190,21 @@ function EditUserModal({ user, orgs, type, onClose, onSave }) {
           <input name="title" value={form.title} onChange={handleChange} className="w-full border rounded px-3 py-2 mt-1" />
         </label>
         <label className="block mb-2">Enter email address
-          <input name="email" value={form.email} onChange={handleChange} className="w-full border rounded px-3 py-2 mt-1" disabled />
+          <input name="email" value={form.email} onChange={handleChange} className="w-full border rounded px-3 py-2 mt-1" disabled={user.role === "admin" || user.role === "manager"} />
         </label>
-        <label className="block mb-2">Choose organization from the list*
-          <select name="organization" value={form.organization} onChange={handleChange} className="w-full border rounded px-3 py-2 mt-1">
-            <option value="">Select</option>
-            {orgs.map(org => (
-              <option key={org.id} value={org.id}>{org.name}</option>
-            ))}
-          </select>
-        </label>
+        {!isAdmin && (
+          <label className="block mb-2">Choose organization from the list*
+            <select name="organization" value={form.organization} onChange={handleChange} className="w-full border rounded px-3 py-2 mt-1">
+              <option value="">Select</option>
+              {orgs.map(org => (
+                <option key={org.id} value={org.id}>{org.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="flex justify-end gap-2 mt-6">
           <button type="button" className="border px-4 py-2 rounded" onClick={onClose}>Cancel</button>
-          <button type="submit" className="bg-black text-white px-6 py-2 rounded" disabled={saving}>{saving ? "Saving..." : "Save changes"}</button>
+          <button type="submit" className="bg-black text-white px-6 py-2 rounded" disabled={saving || uploading}>{saving ? "Saving..." : "Save changes"}</button>
         </div>
       </form>
     </div>

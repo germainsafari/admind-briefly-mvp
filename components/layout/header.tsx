@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/lib/auth-context"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -71,7 +72,7 @@ export function Header() {
                 <Button variant="ghost" className="flex items-center space-x-2 px-3">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.avatar || "/placeholder.svg?height=32&width=32"} />
-                    <AvatarFallback>{user?.name?.substring(0, 2) || "U"}</AvatarFallback>
+                    <AvatarFallback>{user?.name?.split(" ").map(n => n[0]).join("") || "U"}</AvatarFallback>
                   </Avatar>
                   <div className="text-left">
                     <div className="text-sm font-medium">{user?.name || "User"}</div>
@@ -80,7 +81,19 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" aria-label="User menu">
-                <DropdownMenuItem>Profile</DropdownMenuItem>
+                {user?.role === "client" ? (
+                  <Link href="/client/profile" legacyBehavior passHref>
+                    <DropdownMenuItem asChild>
+                      <a>Profile</a>
+                    </DropdownMenuItem>
+                  </Link>
+                ) : (
+                  <Link href={user ? `/admin/users/${user.id}` : "#"} legacyBehavior passHref>
+                    <DropdownMenuItem asChild>
+                      <a>Profile</a>
+                    </DropdownMenuItem>
+                  </Link>
+                )}
                 <DropdownMenuItem>Onboarding</DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {

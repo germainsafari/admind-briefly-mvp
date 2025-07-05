@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Building2, Users, UserCheck, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CreateOrganizationModal } from "./create-organization-modal"
@@ -11,6 +11,7 @@ import { BriefsList } from "./briefs-list"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AddClientModal } from "@/components/manager/add-client-modal"
 import { AddManagerModal } from "./add-manager-modal"
+import { useAuth } from "@/lib/auth-context"
 
 const summaryCards = [
   {
@@ -47,23 +48,29 @@ export function AdminDashboard() {
   const [orgsRefreshKey, setOrgsRefreshKey] = useState(0)
   const [managersRefreshKey, setManagersRefreshKey] = useState(0)
   const [clientsRefreshKey, setClientsRefreshKey] = useState(0)
+  const [briefsRefreshKey, setBriefsRefreshKey] = useState(0)
+  const [tabCounts, setTabCounts] = useState({ organizations: 0, managers: 0, clients: 0, briefs: 0 })
 
-  const tabCounts = {
-    organizations: 2,
-    managers: 2,
-    clients: 4,
-    briefs: 5,
-  }
+  const { user } = useAuth();
+  const firstName = user?.name?.split(" ")[0] || "Admin";
+
+  // Fetch counts from API
+  useEffect(() => {
+    fetch('/api/dashboard-counts')
+      .then(res => res.json())
+      .then(data => setTabCounts(data))
+      .catch(() => setTabCounts({ organizations: 0, managers: 0, clients: 0, briefs: 0 }))
+  }, [orgsRefreshKey, managersRefreshKey, clientsRefreshKey, briefsRefreshKey]);
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center space-x-4">
-          <h1 className="text-5xl font-bold text-text">Hello Admin!</h1>
+          <h1 className="text-5xl font-bold text-text">Hello {firstName}!</h1>
           <Avatar className="h-10 w-10">
-            <AvatarImage src="/placeholder.svg?height=40&width=40" />
-            <AvatarFallback>NH</AvatarFallback>
+            <AvatarImage src={user?.avatar || "/placeholder.svg?height=40&width=40"} />
+            <AvatarFallback>{user?.name?.substring(0, 2) || "AD"}</AvatarFallback>
           </Avatar>
         </div>
         <p className="text-lg text-text-muted max-w-2xl">
@@ -97,28 +104,50 @@ export function AdminDashboard() {
       </div>
 
       {/* Action Button */}
-      <div className="flex justify-end">
-        <Button
-          onClick={() => {
-            if (activeTab === "managers") setShowAddManagerModal(true)
-            else if (activeTab === "clients") setShowAddClientModal(true)
-            else setShowCreateModal(true)
-          }}
-          className="btn-solid-dark hover:btn-solid-dark"
-        >
-          {activeTab === "organizations" && "Create new organization"}
-          {activeTab === "managers" && "Add new manager"}
-          {activeTab === "clients" && "Add new client"}
-          {activeTab === "briefs" && "Create new brief"}
-          <Plus className="ml-4 icon-20" />
-        </Button>
-      </div>
+      {(activeTab !== "briefs" || user?.role !== "admin") && (
+        <div className="flex justify-end">
+          <Button
+            onClick={() => {
+              if (activeTab === "managers") setShowAddManagerModal(true)
+              else if (activeTab === "clients") setShowAddClientModal(true)
+              else setShowCreateModal(true)
+            }}
+            className="btn-solid-dark hover:btn-solid-dark"
+          >
+            {activeTab === "organizations" && "Create new organization"}
+            {activeTab === "managers" && "Add new manager"}
+            {activeTab === "clients" && "Add new client"}
+            {activeTab === "briefs" && user?.role !== "admin" && "Create new brief"}
+            {activeTab === "briefs" && user?.role !== "admin" && <Plus className="ml-4 icon-20" />}
+          </Button>
+        </div>
+      )}
 
       {/* Content based on active tab */}
-      {activeTab === "organizations" && <OrganizationsList key={orgsRefreshKey} />}
-      {activeTab === "managers" && <ManagersList key={managersRefreshKey} />}
-      {activeTab === "clients" && <ClientsList key={clientsRefreshKey} />}
-      {activeTab === "briefs" && <BriefsList />}
+      {activeTab === "organizations" && (
+        <OrganizationsList
+          key={orgsRefreshKey}
+          onOrganizationDeleted={() => setOrgsRefreshKey((k) => k + 1)}
+        />
+      )}
+      {activeTab === "managers" && (
+        <ManagersList
+          key={managersRefreshKey}
+          onManagerDeleted={() => setManagersRefreshKey((k) => k + 1)}
+        />
+      )}
+      {activeTab === "clients" && (
+        <ClientsList
+          key={clientsRefreshKey}
+          onClientDeleted={() => setClientsRefreshKey((k) => k + 1)}
+        />
+      )}
+      {activeTab === "briefs" && (
+        <BriefsList
+          key={briefsRefreshKey}
+          onBriefDeleted={() => setBriefsRefreshKey((k) => k + 1)}
+        />
+      )}
 
       {/* Create Organization Modal */}
       <CreateOrganizationModal

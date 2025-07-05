@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
 
 interface Client {
   id: string
@@ -17,13 +18,31 @@ interface Client {
   status: "active" | "invited" | "deactivated"
 }
 
-export function ClientsList() {
+interface ClientsListProps {
+  onClientDeleted?: () => void;
+}
+
+export function ClientsList({ onClientDeleted }: ClientsListProps) {
   const [clients, setClients] = useState([])
-  useEffect(() => {
+  const { toast } = useToast();
+  const fetchClients = () => {
     fetch('/api/clients')
       .then(res => res.json())
       .then(setClients)
-  }, [])
+  }
+  useEffect(() => { fetchClients() }, [])
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this client?')) return;
+    const res = await fetch(`/api/clients/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      toast({ title: 'Client deleted' });
+      fetchClients();
+      if (onClientDeleted) onClientDeleted();
+    } else {
+      toast({ title: 'Failed to delete', variant: 'destructive' });
+    }
+  }
 
   const getStatusBadge = (status: Client["status"]) => {
     switch (status) {
@@ -77,11 +96,16 @@ export function ClientsList() {
                   {/* Status & Actions */}
                   <div className="flex items-center justify-between">
                     {getStatusBadge(client.status)}
-                    <Link href={`/admin/users/${client.id}?type=client`} passHref legacyBehavior>
-                      <Button as="a" variant="outline" size="sm">
-                        See profile
+                    <div className="flex gap-2">
+                      <Link href={`/admin/users/${client.id}?type=client`} passHref legacyBehavior>
+                        <Button as="a" variant="outline" size="sm">
+                          See profile
+                        </Button>
+                      </Link>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(client.id)}>
+                        Delete
                       </Button>
-                    </Link>
+                    </div>
                   </div>
                 </div>
               </CardContent>

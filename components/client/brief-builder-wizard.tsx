@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Wand2, Save, X, Trash2, Plus, UploadCloud } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DebugUserInfo } from "@/components/debug-user-info"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -155,6 +156,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
 
   const handleSubmit = async () => {
     setSubmitStatus('idle')
+    
     // Map camelCase to snake_case for API
     const toSnake = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
     const projectTypeMap: Record<string, string> = {
@@ -164,6 +166,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
       "video": "Video_Animation",
       "digital": "Digital_Paid_Campaign"
     };
+    
     const payload: any = {}
     Object.entries(briefData).forEach(([key, value]) => {
       if (key === "projectType") {
@@ -174,22 +177,40 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
         payload[toSnake(key)] = value
       }
     })
+    
+    // Filter out empty links before submitting
+    if (Array.isArray(payload.links)) {
+      payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
+    }
+    
     // Set organization_id from user/session if not present
-    if (!payload.organization_id && user?.organization) payload.organization_id = user.organization
-    if (user?.role === "client" && user.id) payload.client_id = user.id
+    if (!payload.organization_id && user?.organization) {
+      payload.organization_id = user.organization // This will be handled by the API
+    }
+    
+    // Set client_id for client users
+    if (user?.role === "client" && user.id) {
+      payload.client_id = user.id;
+    }
+    
     payload.attachments = uploadedFiles // Only send URLs
+    
     try {
       const res = await fetch('/api/briefs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+      
       if (res.ok) {
         setSubmitStatus('success')
       } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Brief submission failed:', errorData);
         setSubmitStatus('error')
       }
-    } catch {
+    } catch (error) {
+      console.error('Brief submission error:', error);
       setSubmitStatus('error')
     }
   }

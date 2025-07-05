@@ -14,6 +14,7 @@ import { BriefBuilderWizard } from "./brief-builder-wizard"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { BriefDetailModal } from "./brief-detail-modal"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useAuth } from "@/lib/auth-context"
 
 interface ClientBrief {
   id: string
@@ -28,6 +29,7 @@ interface ClientBrief {
 const briefTypes = ["General", "UX/UI Website", "Event/Tradeshow", "Video/Animation", "Digital Paid Campaign"]
 
 export function ClientDashboardEnhanced() {
+  const { user } = useAuth();
   const [briefs, setBriefs] = useState<ClientBrief[]>([])
   const [activeTab, setActiveTab] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
@@ -207,6 +209,12 @@ export function ClientDashboardEnhanced() {
     setShowEditWizard(true)
   }
 
+  if (!user || user.role !== "client") {
+    return (
+      <div className="p-8 text-red-600 font-bold text-xl">Access denied. Only clients can access this dashboard.</div>
+    );
+  }
+
   if (showBriefBuilder) {
     return <BriefBuilderWizard onClose={() => setShowBriefBuilder(false)} />
   }
@@ -220,10 +228,10 @@ export function ClientDashboardEnhanced() {
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center space-x-4">
-          <h1 className="text-5xl font-bold text-text">Hello Max!</h1>
+          <h1 className="text-5xl font-bold text-text">Hello {user.name.split(" ")[0]}!</h1>
           <Avatar className="h-10 w-10">
-            <AvatarImage src="/placeholder.svg?height=40&width=40" />
-            <AvatarFallback>MJ</AvatarFallback>
+            <AvatarImage src={user.avatar || "/placeholder.svg?height=40&width=40"} />
+            <AvatarFallback>{user.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
           </Avatar>
         </div>
         <p className="text-lg text-text-muted max-w-3xl">

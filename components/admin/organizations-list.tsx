@@ -23,7 +23,11 @@ interface Organization {
   }>
 }
 
-export function OrganizationsList() {
+interface OrganizationsListProps {
+  onOrganizationDeleted?: () => void;
+}
+
+export function OrganizationsList({ onOrganizationDeleted }: OrganizationsListProps) {
   const [organizations, setOrganizations] = useState([])
   const [editOrg, setEditOrg] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -43,6 +47,7 @@ export function OrganizationsList() {
     if (res.ok) {
       toast({ title: 'Organization deleted' })
       fetchOrgs()
+      if (onOrganizationDeleted) onOrganizationDeleted();
     } else {
       toast({ title: 'Failed to delete', variant: 'destructive' })
     }
