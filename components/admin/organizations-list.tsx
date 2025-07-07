@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import Link from "next/link"
 import { CreateOrganizationModal } from "./create-organization-modal"
 import { useToast } from "@/hooks/use-toast"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 
 interface Organization {
   id: string
@@ -29,17 +30,23 @@ interface OrganizationsListProps {
 
 export function OrganizationsList({ onOrganizationDeleted }: OrganizationsListProps) {
   const [organizations, setOrganizations] = useState([])
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const [editOrg, setEditOrg] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [deletingOrgId, setDeletingOrgId] = useState(null)
   const { toast } = useToast()
 
   const fetchOrgs = () => {
-    fetch('/api/organizations')
+    fetch(`/api/organizations?page=${currentPage}&limit=${pageSize}`)
       .then(res => res.json())
-      .then(setOrganizations)
+      .then(({ data, total }) => {
+        setOrganizations(data);
+        setTotal(total);
+      })
   }
-  useEffect(() => { fetchOrgs() }, [])
+  useEffect(() => { fetchOrgs() }, [currentPage, pageSize])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this organization?')) return
@@ -73,6 +80,8 @@ export function OrganizationsList({ onOrganizationDeleted }: OrganizationsListPr
       toast({ title: 'Failed to update', variant: 'destructive' })
     }
   }
+
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="space-y-4">
@@ -150,6 +159,28 @@ export function OrganizationsList({ onOrganizationDeleted }: OrganizationsListPr
           </motion.div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      <Pagination className="mt-4">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious onClick={() => setCurrentPage(p => Math.max(1, p - 1))} />
+          </PaginationItem>
+          {[...Array(totalPages)].map((_, idx) => (
+            <PaginationItem key={idx}>
+              <PaginationLink
+                isActive={currentPage === idx + 1}
+                onClick={() => setCurrentPage(idx + 1)}
+              >
+                {idx + 1}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          <PaginationItem>
+            <PaginationNext onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
 
       {showEditModal && (
         <CreateOrganizationModal

@@ -16,8 +16,10 @@ datasource db {
 
 enum BriefStatus {
   New
+  Sent
   Shared
   Draft
+  Stale
 }
 
 enum ManagerStatus {

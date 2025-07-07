@@ -275,6 +275,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     }
     payload.attachments = uploadedFiles
     payload.manager_ids = selectedManagers.map((m: any) => m.id);
+    payload.status = 'Sent';
     try {
       const res = await fetch('/api/briefs', {
         method: 'POST',
@@ -282,11 +283,12 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
         body: JSON.stringify(payload),
       })
       if (res.ok) {
+        const brief = await res.json();
         const managerNames = selectedManagers.map((m: any) => m.name).join(', ');
         toast({ title: `Brief sent to ${managerNames}.` });
         setSubmitStatus('success');
         setManagerModalOpen(false);
-        window.location.href = '/client/brief-success';
+        window.location.href = `/client/brief-success?id=${brief.id}`;
       } else {
         const errorData = await res.json().catch(() => ({}));
         setSubmitError(errorData.error || 'Brief submission failed.');
@@ -308,7 +310,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
 
   useEffect(() => {
     if (submitStatus === 'success') {
-      window.location.href = '/client/brief-success';
+      // No-op: redirect is now handled after API response
     }
   }, [submitStatus]);
 
@@ -380,6 +382,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
         if (recipient.email) {
           payload.email = recipient.email;
         }
+        payload.status = 'Sent';
         try {
           const res = await fetch('/api/briefs', {
             method: 'POST',
@@ -387,8 +390,9 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
             body: JSON.stringify(payload),
           })
           if (res.ok) {
+            const brief = await res.json();
             setSubmitStatus('success');
-            window.location.href = '/client/brief-success';
+            window.location.href = `/client/brief-success?id=${brief.id}`;
           } else {
             const errorData = await res.json().catch(() => ({}));
             setSubmitError(errorData.error || 'Brief submission failed.');
@@ -830,11 +834,27 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                       if (["png", "jpg", "jpeg", "gif"].includes(ext)) icon = <span className="inline-block w-5 h-5 bg-blue-200 rounded mr-2" />;
                       if (["pdf"].includes(ext)) icon = <span className="inline-block w-5 h-5 bg-red-200 rounded mr-2" />;
                       if (["mp4", "mov", "avi"].includes(ext)) icon = <span className="inline-block w-5 h-5 bg-green-200 rounded mr-2" />;
+
+                      // New: Secure SAS download handler
+                      const handleViewClick = async () => {
+                        try {
+                          const res = await fetch(`/api/azure-sas-url?filename=${encodeURIComponent(fileName)}`);
+                          const data = await res.json();
+                          if (data.url) {
+                            window.open(data.url, '_blank', 'noopener,noreferrer');
+                          } else {
+                            alert('Failed to generate secure download link.');
+                          }
+                        } catch (err) {
+                          alert('Error generating download link.');
+                        }
+                      };
+
                       return (
                         <div key={idx} className="flex items-center bg-white border border-gray-200 rounded px-3 py-2">
                           {icon}
                           <span className="flex-1 truncate text-gray-800 text-sm">{fileName}</span>
-                          <a href={url} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-blue-600 underline">View</a>
+                          <span onClick={handleViewClick} className="ml-2 text-xs text-blue-600 underline cursor-pointer">View</span>
                           {/* Optionally add a remove button here */}
                         </div>
                       )
@@ -922,6 +942,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                   if (recipient.email) {
                     payload.email = recipient.email;
                   }
+                  payload.status = 'Sent';
                   try {
                     const res = await fetch('/api/briefs', {
                       method: 'POST',
@@ -929,8 +950,9 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                       body: JSON.stringify(payload),
                     })
                     if (res.ok) {
+                      const brief = await res.json();
                       setSubmitStatus('success');
-                      window.location.href = '/client/brief-success';
+                      window.location.href = `/client/brief-success?id=${brief.id}`;
                     } else {
                       const errorData = await res.json().catch(() => ({}));
                       setSubmitError(errorData.error || 'Brief submission failed.');

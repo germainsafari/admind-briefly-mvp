@@ -31,7 +31,7 @@ export function AddClientModal({ open, onOpenChange, onClientCreated }: AddClien
     if (open) {
       fetch('/api/organizations')
         .then(res => res.json())
-        .then(data => setOrganizations(data))
+        .then(data => setOrganizations(Array.isArray(data) ? data : (data.data || [])))
     }
   }, [open])
 

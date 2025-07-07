@@ -7,9 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface BriefSuccessPageProps {
   onBackToDashboard: () => void
+  brief: any
 }
 
-export function BriefSuccessPage({ onBackToDashboard }: BriefSuccessPageProps) {
+export function BriefSuccessPage({ onBackToDashboard, brief }: BriefSuccessPageProps) {
   return (
     <div className="min-h-screen gradient-bg">
       <div className="max-w-4xl mx-auto px-6 py-8">
@@ -33,37 +34,35 @@ export function BriefSuccessPage({ onBackToDashboard }: BriefSuccessPageProps) {
             <div className="space-y-6">
               <div>
                 <div className="text-sm font-medium text-text-muted mb-2">Project name</div>
-                <div className="text-lg font-semibold text-text">Marketing campaign</div>
+                <div className="text-lg font-semibold text-text">{brief?.project_name || <span className="italic text-gray-400">N/A</span>}</div>
               </div>
 
               <div>
                 <div className="text-sm font-medium text-text-muted mb-2">Project type</div>
-                <div className="text-lg font-semibold text-text">General</div>
+                <div className="text-lg font-semibold text-text">{brief?.project_type || <span className="italic text-gray-400">N/A</span>}</div>
               </div>
 
               <div>
                 <div className="text-sm font-medium text-text-muted mb-2">Shared with</div>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                      <AvatarFallback>MF</AvatarFallback>
-                    </Avatar>
-                    <span className="text-text">Martyna Florek</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                      <AvatarFallback>NH</AvatarFallback>
-                    </Avatar>
-                    <span className="text-text">natalia.haligowska-rzepa@admindagency.com</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                      <span className="text-xs text-text">@</span>
+                  {Array.isArray(brief?.managers) && brief.managers.length > 0 ? (
+                    brief.managers.map((manager: any) => (
+                      <div key={manager.id} className="flex items-center space-x-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={manager.avatar || "/placeholder.svg?height=32&width=32"} />
+                          <AvatarFallback>{manager.name ? manager.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : '@'}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-text">{manager.name || manager.email}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                        <span className="text-xs text-text">@</span>
+                      </div>
+                      <span className="text-text italic text-gray-400">No manager info</span>
                     </div>
-                    <span className="text-text">jane.doe@ch.abb.com</span>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

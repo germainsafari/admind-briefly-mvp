@@ -55,8 +55,8 @@ export function ClientDashboardEnhanced() {
       }
       const data = await res.json()
       setBriefs(
-        Array.isArray(data)
-          ? data.map((brief) => ({
+        Array.isArray(data.data)
+          ? data.data.map((brief: any) => ({
               id: brief.id,
               projectName: brief.project_name,
               type: (brief.project_type || "").replace(/_/g, "/"),
@@ -337,16 +337,6 @@ export function ClientDashboardEnhanced() {
                     }`}
                   >
                     Drafts ({briefCounts.drafts})
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("shared")}
-                    className={`pb-2 border-b-2 font-medium text-sm ${
-                      activeTab === "shared"
-                        ? "border-gray-900 text-gray-900"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
-                  >
-                    Shared with you ({briefCounts.shared})
                   </button>
                 </div>
               </div>

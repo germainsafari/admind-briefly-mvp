@@ -22,7 +22,7 @@ interface Brief {
   id: string
   projectName: string
   type: "General" | "UX/UI Website" | "Event/Tradeshow" | "Video/Animation" | "Digital Paid Campaign"
-  status: "New" | "Shared" | "Draft"
+  status: "New" | "Shared" | "Draft" | "Sent"
   creator: {
     name: string
     avatar: string
@@ -114,6 +114,7 @@ export function ManagerDashboardNew() {
   const [briefs, setBriefs] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setLoading(true)
@@ -121,32 +122,53 @@ export function ManagerDashboardNew() {
       fetch('/api/briefs').then(res => res.json()),
       fetch('/api/clients').then(res => res.json()),
     ]).then(([briefsData, clientsData]) => {
-      setBriefs(briefsData)
+      setBriefs(briefsData.data)
       setClients(clientsData)
       setLoading(false)
     })
   }, [])
 
-  // Show all briefs regardless of creator
-  const filteredBriefs = briefs
-    .filter((brief: any) => {
-      if (activeTab === "new" && brief.status !== "New") return false
-      if (selectedTypes.length > 0 && !selectedTypes.includes(brief.type)) return false
-      return true
-    })
+  // Filtering
+  const filteredBriefs = briefs.filter((brief: any) => {
+    if (activeTab === "new" && brief.status !== "New") return false;
+    // Support both 'type' and 'project_type' fields
+    const briefType = brief.type || brief.project_type;
+    if (selectedTypes.length > 0 && !selectedTypes.includes(briefType)) return false;
+    return true;
+  });
 
-  // Move pagination variables after filteredBriefs is defined
-  const [currentPage, setCurrentPage] = useState(1);
+  // Sorting
+  const sortedBriefs = [...filteredBriefs].sort((a, b) => {
+    const dateA = new Date(a.date || a.createdAt || 0).getTime();
+    const dateB = new Date(b.date || b.createdAt || 0).getTime();
+    if (sortBy === "newest") return dateB - dateA;
+    if (sortBy === "oldest") return dateA - dateB;
+    return 0;
+  });
+
   const briefsPerPage = 15;
-  const totalPages = Math.ceil(filteredBriefs.length / briefsPerPage);
-  const paginatedBriefs = filteredBriefs.slice((currentPage - 1) * briefsPerPage, currentPage * briefsPerPage);
+  const totalPages = Math.ceil(sortedBriefs.length / briefsPerPage);
+  const paginatedBriefs = sortedBriefs.slice((currentPage - 1) * briefsPerPage, currentPage * briefsPerPage);
+
+  // Reset to page 1 when filters or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, selectedTypes, activeTab]);
 
   const briefCounts = {
     all: briefs.length,
     new: briefs.filter((b: any) => b.status === "New").length,
   }
 
-  const getStatusBadge = (status: Brief["status"]) => {
+  const getStatusBadge = (status: Brief["status"], date?: string) => {
+    if (status === "New" && date) {
+      const created = new Date(date);
+      const now = new Date();
+      const daysDiff = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff > 3) {
+        return <Badge className="bg-yellow-100 text-yellow-800 border-0 font-medium text-xs px-2 py-1">Stale</Badge>;
+      }
+    }
     switch (status) {
       case "New":
         return <Badge className="status-new border-0 font-medium text-xs px-2 py-1">New</Badge>
@@ -154,6 +176,8 @@ export function ManagerDashboardNew() {
         return <Badge className="status-draft border-0 font-medium text-xs px-2 py-1">Draft</Badge>
       case "Shared":
         return <Badge className="bg-blue-100 text-blue-800 border-0 font-medium text-xs px-2 py-1">Shared</Badge>
+      case "Sent":
+        return <Badge className="bg-green-100 text-green-800 border-0 font-medium text-xs px-2 py-1">Sent</Badge>
       default:
         return null
     }
@@ -336,7 +360,7 @@ export function ManagerDashboardNew() {
                           </div>
 
                           {/* Status */}
-                          <div className="col-span-2">{getStatusBadge(brief.status)}</div>
+                          <div className="col-span-2">{getStatusBadge(brief.status, brief.date)}</div>
 
                           {/* Creator */}
                           <div className="col-span-2">

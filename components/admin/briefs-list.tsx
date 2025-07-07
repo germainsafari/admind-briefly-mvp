@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Card } from "@/components/ui/card"
 import { BriefDetailModal } from "../client/brief-detail-modal"
 import { useToast } from "@/hooks/use-toast"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 
 interface Brief {
   id: string | number
@@ -107,6 +108,9 @@ function isNew(dateString: string) {
 
 export function BriefsList({ onBriefDeleted }: BriefsListProps) {
   const [briefs, setBriefs] = useState<Brief[]>([])
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const [selectedBrief, setSelectedBrief] = useState<Brief | null>(null)
   const [showSummary, setShowSummary] = useState(false)
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
@@ -115,17 +119,36 @@ export function BriefsList({ onBriefDeleted }: BriefsListProps) {
   const { toast } = useToast();
 
   const fetchBriefs = () => {
-    fetch('/api/briefs')
+    fetch(`/api/briefs?page=${currentPage}&limit=${pageSize}`)
       .then(res => res.json())
-      .then(setBriefs)
+      .then(({ data, total }) => {
+        setBriefs(data);
+        setTotal(total);
+      })
   }
-  useEffect(() => { fetchBriefs() }, [])
+  useEffect(() => { fetchBriefs() }, [currentPage, pageSize])
 
-  const getStatusPill = (status: Brief["status"]) => {
-    if (status === "New") {
-      return <Badge className="bg-green-100 text-green-800">New</Badge>
+  const getStatusBadge = (status: string, date?: string) => {
+    if (status === "New" && date) {
+      const created = new Date(date);
+      const now = new Date();
+      const daysDiff = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff > 3) {
+        return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">Stale</span>;
+      }
     }
-    return null
+    switch (status) {
+      case "New":
+        return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">New</span>;
+      case "Draft":
+        return <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-medium">Draft</span>;
+      case "Shared":
+        return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">Shared</span>;
+      case "Sent":
+        return <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">Sent</span>;
+      default:
+        return null;
+    }
   }
 
   const handleShare = (brief: Brief) => {
@@ -173,6 +196,8 @@ export function BriefsList({ onBriefDeleted }: BriefsListProps) {
   const handleClearFilters = () => {
     setTypeFilters([]);
   };
+
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="space-y-4">
@@ -225,9 +250,7 @@ export function BriefsList({ onBriefDeleted }: BriefsListProps) {
               </div>
               {/* Status */}
               <div className="flex items-center h-full">
-                {isNew(brief.date) ? (
-                  <Badge className="bg-green-100 text-green-800">New</Badge>
-                ) : null}
+                {getStatusBadge(brief.status, brief.date)}
               </div>
               {/* Brief creator */}
               <div className="flex items-center gap-2 min-w-0">
@@ -296,6 +319,27 @@ export function BriefsList({ onBriefDeleted }: BriefsListProps) {
           }}
         />
       )}
+      {/* Pagination Controls */}
+      <Pagination className="mt-4">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious onClick={() => setCurrentPage(p => Math.max(1, p - 1))} />
+          </PaginationItem>
+          {[...Array(totalPages)].map((_, idx) => (
+            <PaginationItem key={idx}>
+              <PaginationLink
+                isActive={currentPage === idx + 1}
+                onClick={() => setCurrentPage(idx + 1)}
+              >
+                {idx + 1}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          <PaginationItem>
+            <PaginationNext onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   )
 }

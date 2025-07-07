@@ -2,20 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 
 export async function GET(req: NextRequest) {
-  const briefs = await prisma.brief.findMany({
-    orderBy: { id: 'desc' },
-    include: {
-      client: { select: { id: true, name: true, avatar: true, email: true } },
-      managers: { select: { id: true, name: true, avatar: true, email: true } },
-      organization: { select: { id: true, name: true } },
-    },
-  });
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '10', 10);
+  const skip = (page - 1) * limit;
+
+  const [briefs, total] = await Promise.all([
+    prisma.brief.findMany({
+      skip,
+      take: limit,
+      orderBy: { id: 'desc' },
+      include: {
+        client: { select: { id: true, name: true, avatar: true, email: true } },
+        managers: { select: { id: true, name: true, avatar: true, email: true } },
+        organization: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.brief.count(),
+  ]);
 
   // Map to frontend-friendly format with all fields
   const mapped = briefs.map(brief => {
     const createdAt = new Date(brief.created_at);
     const now = new Date();
-    const daysDiff = (now - createdAt) / (1000 * 60 * 60 * 24);
+    const daysDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
     let status = null;
     if (daysDiff < 3) status = 'New';
 
@@ -68,7 +78,7 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json(mapped);
+  return NextResponse.json({ data: mapped, total });
 }
 
 export async function POST(req: NextRequest) {
@@ -115,12 +125,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Remove raw IDs from data
+    // Remove raw IDs from data before spreading
     delete data.organization_id;
     delete data.client_id;
     delete data.creator_id;
     delete data.manager_id;
     delete data.manager_ids;
+
+    // Build Prisma data object
+    const prismaData: any = {
+      ...data,
+      attachments: data.attachments || [],
+      links: data.links || [],
+      client: { connect: { id: clientId } },
+      organization: { connect: { id: orgId } },
+    };
+    // Connect managers (many-to-many)
+    if (Array.isArray(data.manager_ids) && data.manager_ids.length > 0) {
+      prismaData.managers = { connect: data.manager_ids.map((id: any) => ({ id: Number(id) })) };
+    }
 
     // Coerce numbers if present
     if (data.timeline_expectations !== undefined) {
@@ -132,19 +155,6 @@ export async function POST(req: NextRequest) {
 
     if (Array.isArray(data.links)) {
       data.links = data.links.filter((l: string) => l && l.length > 0);
-    }
-
-    // Build Prisma data object
-    const prismaData: any = {
-      ...data,
-      organization: { connect: { id: orgId } },
-      attachments: data.attachments || [],
-      links: data.links || [],
-      client: { connect: { id: clientId } },
-    };
-    // Connect managers (many-to-many)
-    if (Array.isArray(data.manager_ids) && data.manager_ids.length > 0) {
-      prismaData.managers = { connect: data.manager_ids.map((id: any) => ({ id: Number(id) })) };
     }
 
     const brief = await prisma.brief.create({ data: prismaData });

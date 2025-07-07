@@ -23,7 +23,7 @@ interface Brief {
 interface BriefSummaryPanelProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  brief: Brief | null
+  brief: any // Use 'any' to allow all API fields
 }
 
 export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPanelProps) {
@@ -34,17 +34,43 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
     setFormattedDate(new Date(brief.date).toLocaleDateString("en-GB"));
   }, [brief.date]);
 
-  const handleScrollToTop = () => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+  // Determine status (New if sent within 3 days)
+  let status = brief.status;
+  if (!status && brief.date) {
+    const createdAt = new Date(brief.date);
+    const now = new Date();
+    const daysDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysDiff < 3) status = 'New';
+  }
+
+  // Helper to render lists from string or array
+  const renderList = (value: any) => {
+    if (!value) return <span className="italic text-gray-400">N/A</span>;
+    if (Array.isArray(value)) {
+      if (value.length === 0) return <span className="italic text-gray-400">N/A</span>;
+      return (
+        <ul className="list-disc list-inside space-y-1">
+          {value.map((item, idx) => <li key={idx}>{item}</li>)}
+        </ul>
+      );
     }
+    if (typeof value === 'string') {
+      const items = value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
+      if (items.length === 1) return <span>{items[0]}</span>;
+      return (
+        <ul className="list-disc list-inside space-y-1">
+          {items.map((item, idx) => <li key={idx}>{item}</li>)}
+        </ul>
+      );
+    }
+    return <span>{String(value)}</span>;
   };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-2xl"
+        className="w-full sm:max-w-2xl max-h-screen overflow-y-auto"
         aria-labelledby="brief-summary-title"
         aria-describedby={undefined}
       >
@@ -65,7 +91,9 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
               </Button>
             </div>
           </div>
-          <SheetTitle id="brief-summary-title" className="text-2xl">Brief summary</SheetTitle>
+          <SheetTitle id="brief-summary-title" className="text-2xl">
+            Brief summary{brief ? '' : ' (loading...)'}
+          </SheetTitle>
         </SheetHeader>
 
         <div className="mt-8 space-y-6">
@@ -77,10 +105,10 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                   <div className="text-sm text-gray-500 mb-1">Submitted by</div>
                   <div className="flex items-center space-x-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={brief.creator.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{brief.creator.name.substring(0, 2)}</AvatarFallback>
+                      <AvatarImage src={brief.creator?.avatar || "/placeholder.svg"} />
+                      <AvatarFallback>{brief.creator?.name?.substring(0, 2) || '@'}</AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{brief.creator.name}</span>
+                    <span className="font-medium">{brief.creator?.name || brief.creator?.email || 'N/A'}</span>
                   </div>
                 </div>
                 <div>
@@ -88,43 +116,27 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                   <div className="font-medium">{formattedDate}</div>
                 </div>
               </div>
-
               <div className="mt-6">
-                <div className="text-sm text-gray-500 mb-1">Reviewed by</div>
-                <div className="flex items-center space-x-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                    <AvatarFallback>MJ</AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">Max Johnson</span>
+                <div className="text-sm text-gray-500 mb-1">Assigned manager(s)</div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  {Array.isArray(brief.managers) && brief.managers.length > 0 ? (
+                    brief.managers.map((manager: any) => (
+                      <div key={manager.id} className="flex items-center space-x-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={manager.avatar || "/placeholder.svg?height=32&width=32"} />
+                          <AvatarFallback>{manager.name ? manager.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : '@'}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{manager.name || manager.email}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="italic text-gray-400">No manager info</span>
+                  )}
                 </div>
               </div>
-
-              <div className="mt-6">
-                <div className="text-sm text-gray-500 mb-1">Assigned manager</div>
-                <div className="flex items-center space-x-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                    <AvatarFallback>MF</AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">Martyna Florek</span>
-                </div>
-              </div>
-
               <div className="mt-6">
                 <div className="text-sm text-gray-500 mb-1">Brief status</div>
-                <div className="flex space-x-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src="/placeholder.svg?height=24&width=24" />
-                    <AvatarFallback className="text-xs">NH</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">natalia.haligowska</span>
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src="/placeholder.svg?height=24&width=24" />
-                    <AvatarFallback className="text-xs">JD</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">jane.doe@abb.com</span>
-                </div>
+                <span className="font-medium">{status || 'N/A'}</span>
               </div>
             </CardContent>
           </Card>
@@ -140,35 +152,23 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                 <div className="space-y-4">
                   <div>
                     <div className="text-sm font-medium text-gray-700 mb-2">Project title</div>
-                    <div className="text-sm">{brief.projectName}</div>
+                    <div className="text-sm">{brief.project_name || <span className="italic text-gray-400">N/A</span>}</div>
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-700 mb-2">Project type</div>
-                    <div className="text-sm">{brief.type}</div>
+                    <div className="text-sm">{brief.project_type || <span className="italic text-gray-400">N/A</span>}</div>
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-700 mb-2">Project description</div>
-                    <div className="text-sm text-gray-600">
-                      Lorem ipsum dolor sit amet consectetur. Mauris ipsum arcu vulputate molestie ipsum vitae. Aliquet
-                      at auctor nisl et ac morbi turpis eu habitasse. Vitae fermentum amet molestie justo porttibus
-                      amet.
-                    </div>
+                    <div className="text-sm text-gray-600">{brief.project_description || <span className="italic text-gray-400">N/A</span>}</div>
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-700 mb-2">Audit goals</div>
-                    <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-                      <li>Lorem ipsum dolor sit amet consectetur.</li>
-                      <li>Tellus sit sed quis integer in sagittis tortor sagittis pellentesque.</li>
-                      <li>Gravida quis donec dignissim sit aliquam posuere lorem elit.</li>
-                      <li>Sed viverra sit adipiscing bibendum volutpat vitae.</li>
-                      <li>Dui neque donec at in odio.</li>
-                      <li>Commodo cum neque non quis.</li>
-                      <li>Fermentum semectus condimentum molestie.</li>
-                    </ul>
+                    {renderList(brief.business_goals)}
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-700 mb-2">Timeline expectations</div>
-                    <div className="text-sm">6 weeks</div>
+                    <div className="text-sm">{brief.timeline_expectations || <span className="italic text-gray-400">N/A</span>}</div>
                   </div>
                 </div>
               </CollapsibleContent>
@@ -180,7 +180,28 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                 <ChevronDown className="h-4 w-4" />
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
-                <div className="text-sm text-gray-600">Content for project scope and requirements...</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Agency scope</div>
+                    {renderList(brief.agency_scope)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Mandatories</div>
+                    {renderList(brief.mandatories)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Technical requirements</div>
+                    {renderList(brief.technical_requirements)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Challenge</div>
+                    <div className="text-sm text-gray-600">{brief.challenge || <span className="italic text-gray-400">N/A</span>}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Project budget</div>
+                    <div className="text-sm text-gray-600">{brief.project_budget || <span className="italic text-gray-400">N/A</span>}</div>
+                  </div>
+                </div>
               </CollapsibleContent>
             </Collapsible>
 
@@ -190,7 +211,20 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                 <ChevronDown className="h-4 w-4" />
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
-                <div className="text-sm text-gray-600">Content for audience and insights...</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Target audience</div>
+                    {renderList(brief.target_audience)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Internal stakeholders</div>
+                    {renderList(brief.internal_stakeholders)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Consumer insight</div>
+                    <div className="text-sm text-gray-600">{brief.consumer_insight || <span className="italic text-gray-400">N/A</span>}</div>
+                  </div>
+                </div>
               </CollapsibleContent>
             </Collapsible>
 
@@ -200,7 +234,28 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                 <ChevronDown className="h-4 w-4" />
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
-                <div className="text-sm text-gray-600">Content for strategic input...</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Key message</div>
+                    <div className="text-sm text-gray-600">{brief.key_message || <span className="italic text-gray-400">N/A</span>}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Value proposition</div>
+                    <div className="text-sm text-gray-600">{brief.value_proposition || <span className="italic text-gray-400">N/A</span>}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Tone of voice</div>
+                    <div className="text-sm text-gray-600">{brief.tone_of_voice || <span className="italic text-gray-400">N/A</span>}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">RTB features</div>
+                    {renderList(brief.rtb_features)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Project KPI</div>
+                    {renderList(brief.project_kpi)}
+                  </div>
+                </div>
               </CollapsibleContent>
             </Collapsible>
 
@@ -210,7 +265,28 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                 <ChevronDown className="h-4 w-4" />
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
-                <div className="text-sm text-gray-600">Content for references and context...</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Inspirations</div>
+                    {renderList(brief.inspirations)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Past communication</div>
+                    {renderList(brief.past_communication)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Market competition</div>
+                    {renderList(brief.market_competition)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Touchpoints</div>
+                    {renderList(brief.touchpoints)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Links</div>
+                    {renderList(brief.links)}
+                  </div>
+                </div>
               </CollapsibleContent>
             </Collapsible>
 
@@ -220,14 +296,23 @@ export function BriefSummaryPanel({ open, onOpenChange, brief }: BriefSummaryPan
                 <ChevronDown className="h-4 w-4" />
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border border-gray-200 rounded-lg mt-2">
-                <div className="text-sm text-gray-600">Content for final notes and attachments...</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Final notes</div>
+                    <div className="text-sm text-gray-600">{brief.final_notes || <span className="italic text-gray-400">N/A</span>}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">Attachments</div>
+                    {renderList(brief.attachments)}
+                  </div>
+                </div>
               </CollapsibleContent>
             </Collapsible>
           </div>
 
           {/* Back to Top */}
           <div className="flex justify-end pt-8">
-            <Button variant="ghost" onClick={handleScrollToTop}>
+            <Button variant="ghost" onClick={() => { if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: "smooth" }); }}>
               ↑ Back to top
             </Button>
           </div>

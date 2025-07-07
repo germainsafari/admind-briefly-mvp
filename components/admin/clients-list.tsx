@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 
 interface Client {
   id: string
@@ -24,13 +26,19 @@ interface ClientsListProps {
 
 export function ClientsList({ onClientDeleted }: ClientsListProps) {
   const [clients, setClients] = useState([])
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const { toast } = useToast();
   const fetchClients = () => {
-    fetch('/api/clients')
+    fetch(`/api/clients?page=${currentPage}&limit=${pageSize}`)
       .then(res => res.json())
-      .then(setClients)
+      .then(({ data, total }) => {
+        setClients(data);
+        setTotal(total);
+      })
   }
-  useEffect(() => { fetchClients() }, [])
+  useEffect(() => { fetchClients() }, [currentPage, pageSize])
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this client?')) return;
@@ -55,64 +63,69 @@ export function ClientsList({ onClientDeleted }: ClientsListProps) {
     }
   }
 
+  const totalPages = Math.ceil(total / pageSize);
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="grid grid-cols-3 gap-4 text-sm font-medium text-gray-500 px-4">
-        <div>Manager name</div>
-        <div>Organization</div>
-        <div>Status</div>
-      </div>
-
-      {/* Clients */}
-      <div className="space-y-3">
-        {Array.isArray(clients) && clients.map((client, index) => (
-          <motion.div
-            key={client.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-3 gap-4 items-center">
-                  {/* Client Info */}
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={client.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{client.name.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{client.name}</div>
-                      <div className="text-sm text-gray-500">{client.title}</div>
-                    </div>
-                  </div>
-
-                  {/* Organization */}
+    <div className="w-full">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Manager name</TableHead>
+            <TableHead>Organization</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.isArray(clients) && clients.map((client, index) => (
+            <TableRow key={client.id}>
+              <TableCell>
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={client.avatar || "/placeholder.svg"} />
+                    <AvatarFallback>{client.name.substring(0, 2)}</AvatarFallback>
+                  </Avatar>
                   <div>
-                    <span className="text-sm">{client.organization_name || client.organization}</span>
-                  </div>
-
-                  {/* Status & Actions */}
-                  <div className="flex items-center justify-between">
-                    {getStatusBadge(client.status)}
-                    <div className="flex gap-2">
-                      <Link href={`/admin/users/${client.id}?type=client`} passHref legacyBehavior>
-                        <Button as="a" variant="outline" size="sm">
-                          See profile
-                        </Button>
-                      </Link>
-                      <Button variant="destructive" size="sm" onClick={() => handleDelete(client.id)}>
-                        Delete
-                      </Button>
-                    </div>
+                    <div className="font-medium">{client.name}</div>
+                    <div className="text-sm text-gray-500">{client.title}</div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+              </TableCell>
+              <TableCell>{client.organization_name || client.organization}</TableCell>
+              <TableCell>
+                {getStatusBadge(client.status) || (client.status === "active" && <Badge className="bg-green-100 text-green-800">Active</Badge>)}
+              </TableCell>
+              <TableCell className="text-right">
+                <Link href={`/admin/users/${client.id}?type=client`} passHref legacyBehavior>
+                  <Button as="a" variant="outline" size="sm">
+                    See profile
+                  </Button>
+                </Link>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Pagination className="mt-4">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious onClick={() => setCurrentPage(p => Math.max(1, p - 1))} />
+          </PaginationItem>
+          {[...Array(totalPages)].map((_, idx) => (
+            <PaginationItem key={idx}>
+              <PaginationLink
+                isActive={currentPage === idx + 1}
+                onClick={() => setCurrentPage(idx + 1)}
+              >
+                {idx + 1}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          <PaginationItem>
+            <PaginationNext onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   )
 }

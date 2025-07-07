@@ -2,13 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 
 export async function GET(req: NextRequest) {
-  const clients = await prisma.client.findMany({
-    orderBy: { id: 'asc' },
-    include: { organization: { select: { name: true } } },
-  });
-  // Flatten organization_name for compatibility
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '10', 10);
+  const skip = (page - 1) * limit;
+
+  const [clients, total] = await Promise.all([
+    prisma.client.findMany({
+      skip,
+      take: limit,
+      orderBy: { id: 'asc' },
+      include: { organization: { select: { name: true } } },
+    }),
+    prisma.client.count(),
+  ]);
   const result = clients.map(c => ({ ...c, organization_name: c.organization?.name || null }));
-  return NextResponse.json(result);
+  return NextResponse.json({ data: result, total });
 }
 
 export async function POST(req: NextRequest) {

@@ -2,15 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
-  // Only return users with role 'manager'
-  const managers = await prisma.manager.findMany({
-    where: { role: 'manager' },
-    orderBy: { id: 'asc' },
-    include: { organization: { select: { name: true } } },
-  });
-  // Flatten organization_name for compatibility
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '10', 10);
+  const skip = (page - 1) * limit;
+
+  const [managers, total] = await Promise.all([
+    prisma.manager.findMany({
+      where: { role: 'manager' },
+      skip,
+      take: limit,
+      orderBy: { id: 'asc' },
+      include: { organization: { select: { name: true } } },
+    }),
+    prisma.manager.count({ where: { role: 'manager' } }),
+  ]);
   const result = managers.map(m => ({ ...m, organization_name: m.organization?.name || null }));
-  return NextResponse.json(result);
+  return NextResponse.json({ data: result, total });
 }
 
 export async function POST(req: NextRequest) {
