@@ -5,8 +5,8 @@ export async function GET(req: NextRequest) {
   const briefs = await prisma.brief.findMany({
     orderBy: { id: 'desc' },
     include: {
-      creator: { select: { id: true, name: true, avatar: true, email: true } },
       client: { select: { id: true, name: true, avatar: true, email: true } },
+      managers: { select: { id: true, name: true, avatar: true, email: true } },
       organization: { select: { id: true, name: true } },
     },
   });
@@ -24,25 +24,21 @@ export async function GET(req: NextRequest) {
       project_name: brief.project_name,
       project_type: brief.project_type,
       status,
-      creator: brief.creator ? {
-        id: brief.creator.id,
-        name: brief.creator.name,
-        avatar: brief.creator.avatar,
-        email: brief.creator.email,
-      } : null,
-      manager: brief.creator ? {
-        id: brief.creator.id,
-        name: brief.creator.name,
-        avatar: brief.creator.avatar,
-        email: brief.creator.email,
-      } : null,
-      client: brief.client ? {
+      creator: brief.client ? {
         id: brief.client.id,
         name: brief.client.name,
         avatar: brief.client.avatar,
         email: brief.client.email,
       } : null,
+      managers: Array.isArray(brief.managers) ? brief.managers.map(m => ({
+        id: m.id,
+        name: m.name,
+        avatar: m.avatar,
+        email: m.email,
+      })) : [],
       date: brief.created_at,
+      updated_at: brief.updated_at,
+      sent_at: brief.created_at,
       organization: brief.organization,
       project_description: brief.project_description,
       business_goals: brief.business_goals,
@@ -76,8 +72,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Only allow clients to create briefs
+  const userRole = req.headers.get('x-user-role');
+  if (userRole !== 'client') {
+    return NextResponse.json({ error: 'Only clients can create briefs' }, { status: 403 });
+  }
+
   const data = await req.json();
-  console.log('BRIEF PAYLOAD:', data);
   if (data.project_k_p_i && !data.project_kpi) {
     data.project_kpi = data.project_k_p_i;
     delete data.project_k_p_i;
@@ -86,19 +87,16 @@ export async function POST(req: NextRequest) {
     // Handle organization_id - could be numeric ID or organization name
     let orgId: number;
     if (typeof data.organization_id === 'string' && isNaN(Number(data.organization_id))) {
-      // It's an organization name, look it up or create it
       let organization = await prisma.organization.findFirst({
         where: { name: data.organization_id }
       });
       if (!organization) {
-        // Create the organization if it doesn't exist
         organization = await prisma.organization.create({
           data: { name: data.organization_id }
         });
       }
       orgId = organization.id;
     } else {
-      // It's a numeric ID
       orgId = parseInt(data.organization_id, 10);
       if (Number.isNaN(orgId)) {
         throw new Error('organization_id must be numeric or a valid organization name');
@@ -110,7 +108,6 @@ export async function POST(req: NextRequest) {
     if (data.client_id !== undefined && Number.isNaN(clientId)) {
       throw new Error('client_id must be numeric');
     }
-    // Validate client existence if clientId is provided
     if (clientId !== undefined) {
       const clientExists = await prisma.client.findUnique({ where: { id: clientId } });
       if (!clientExists) {
@@ -121,6 +118,9 @@ export async function POST(req: NextRequest) {
     // Remove raw IDs from data
     delete data.organization_id;
     delete data.client_id;
+    delete data.creator_id;
+    delete data.manager_id;
+    delete data.manager_ids;
 
     // Coerce numbers if present
     if (data.timeline_expectations !== undefined) {
@@ -130,7 +130,6 @@ export async function POST(req: NextRequest) {
       data.project_budget = String(data.project_budget);
     }
 
-    // Filter out empty links
     if (Array.isArray(data.links)) {
       data.links = data.links.filter((l: string) => l && l.length > 0);
     }
@@ -141,9 +140,11 @@ export async function POST(req: NextRequest) {
       organization: { connect: { id: orgId } },
       attachments: data.attachments || [],
       links: data.links || [],
+      client: { connect: { id: clientId } },
     };
-    if (clientId !== undefined) {
-      prismaData.client = { connect: { id: clientId } };
+    // Connect managers (many-to-many)
+    if (Array.isArray(data.manager_ids) && data.manager_ids.length > 0) {
+      prismaData.managers = { connect: data.manager_ids.map((id: any) => ({ id: Number(id) })) };
     }
 
     const brief = await prisma.brief.create({ data: prismaData });

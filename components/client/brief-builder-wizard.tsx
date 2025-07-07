@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { BriefSummaryStreamlined } from "./brief-summary-streamlined"
 import { useAuth } from "@/lib/auth-context"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { useToast } from '@/hooks/use-toast'
 
 interface BriefBuilderWizardProps {
   onClose: () => void
@@ -67,6 +70,7 @@ const steps = [
 
 export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1)
   const [briefData, setBriefData] = useState<BriefData>({
     projectName: initialData?.projectName || "",
@@ -101,6 +105,14 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
   const [uploading, setUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [managerModalOpen, setManagerModalOpen] = useState(false);
+  const [managers, setManagers] = useState<any[]>([]);
+  const [selectedManagers, setSelectedManagers] = useState<any[]>([]);
+  const [managerError, setManagerError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [saveDraftError, setSaveDraftError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showStep8CancelConfirm, setShowStep8CancelConfirm] = useState(false);
 
   const updateBriefData = (field: keyof BriefData, value: any) => {
     setBriefData((prev) => ({ ...prev, [field]: typeof value === 'string' ? value : (value || "") }))
@@ -154,10 +166,31 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     setUploading(false)
   }
 
+  // Fetch managers for the client's organization
+  const fetchManagers = async () => {
+    if (!user?.organization) return;
+    const res = await fetch(`/api/organizations/${user.organization}/managers`);
+    if (res.ok) {
+      setManagers(await res.json());
+    }
+  };
+
+  // Open manager modal after last step
+  const handleOpenManagerModal = async () => {
+    await fetchManagers();
+    setManagerModalOpen(true);
+  };
+
+  // Modified submit handler to use manager modal
   const handleSubmit = async () => {
-    setSubmitStatus('idle')
-    
-    // Map camelCase to snake_case for API
+    setSubmitStatus('idle');
+    // Instead of submitting, open the manager selection modal
+    await handleOpenManagerModal();
+  };
+
+  // Save as draft handler
+  const handleSaveAndClose = async () => {
+    setSaveDraftError(null);
     const toSnake = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
     const projectTypeMap: Record<string, string> = {
       "general": "General",
@@ -166,7 +199,6 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
       "video": "Video_Animation",
       "digital": "Digital_Paid_Campaign"
     };
-    
     const payload: any = {}
     Object.entries(briefData).forEach(([key, value]) => {
       if (key === "projectType") {
@@ -177,43 +209,102 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
         payload[toSnake(key)] = value
       }
     })
-    
-    // Filter out empty links before submitting
     if (Array.isArray(payload.links)) {
       payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
     }
-    
-    // Set organization_id from user/session if not present
     if (!payload.organization_id && user?.organization) {
-      payload.organization_id = user.organization // This will be handled by the API
+      payload.organization_id = user.organization
     }
-    
-    // Set client_id for client users
     if (user?.role === "client" && user.id) {
       payload.client_id = user.id;
     }
-    
-    payload.attachments = uploadedFiles // Only send URLs
-    
+    payload.attachments = uploadedFiles
+    payload.status = 'Draft';
     try {
       const res = await fetch('/api/briefs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-role': 'client' },
         body: JSON.stringify(payload),
       })
-      
       if (res.ok) {
-        setSubmitStatus('success')
+        toast({ title: 'Your brief has been saved as a draft.' });
+        window.location.href = '/client';
       } else {
         const errorData = await res.json().catch(() => ({}));
-        console.error('Brief submission failed:', errorData);
-        setSubmitStatus('error')
+        setSaveDraftError(errorData.error || 'Failed to save draft.');
       }
     } catch (error) {
-      console.error('Brief submission error:', error);
-      setSubmitStatus('error')
+      setSaveDraftError('Failed to save draft.');
     }
-  }
+  };
+
+  // Actual submit after manager selection
+  const handleManagerConfirm = async () => {
+    setSubmitError(null);
+    if (!selectedManagers.length) {
+      setManagerError('Please select at least one manager.');
+      return;
+    }
+    setManagerError(null);
+    const toSnake = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+    const projectTypeMap: Record<string, string> = {
+      "general": "General",
+      "ux-ui": "UX_UI_Website",
+      "event": "Event_Tradeshow",
+      "video": "Video_Animation",
+      "digital": "Digital_Paid_Campaign"
+    };
+    const payload: any = {}
+    Object.entries(briefData).forEach(([key, value]) => {
+      if (key === "projectType") {
+        payload["project_type"] = projectTypeMap[value as string] || undefined;
+      } else if (key === "projectKPI") {
+        payload["project_kpi"] = value;
+      } else {
+        payload[toSnake(key)] = value
+      }
+    })
+    if (Array.isArray(payload.links)) {
+      payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
+    }
+    if (!payload.organization_id && user?.organization) {
+      payload.organization_id = user.organization
+    }
+    if (user?.role === "client" && user.id) {
+      payload.client_id = user.id;
+    }
+    payload.attachments = uploadedFiles
+    payload.manager_ids = selectedManagers.map((m: any) => m.id);
+    try {
+      const res = await fetch('/api/briefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': 'client' },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        const managerNames = selectedManagers.map((m: any) => m.name).join(', ');
+        toast({ title: `Brief sent to ${managerNames}.` });
+        setSubmitStatus('success');
+        setManagerModalOpen(false);
+        window.location.href = '/client/brief-success';
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setSubmitError(errorData.error || 'Brief submission failed.');
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      setSubmitError('Brief submission error.');
+      setSubmitStatus('error');
+    }
+  };
+
+  // Cancel logic for Step 8
+  const handleStep8Cancel = () => setShowStep8CancelConfirm(true);
+  const handleStep8CancelConfirm = () => {
+    setShowStep8CancelConfirm(false);
+    setCurrentStep(7);
+  };
+  const handleStep8CancelDismiss = () => setShowStep8CancelConfirm(false);
 
   useEffect(() => {
     if (submitStatus === 'success') {
@@ -253,8 +344,67 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     return <BriefSummaryStreamlined
       data={briefData}
       onBack={() => setCurrentStep(7)}
-      onSubmit={handleSubmit}
+      onSubmit={async (recipient) => {
+        setSubmitError(null);
+        const toSnake = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+        const projectTypeMap: Record<string, string> = {
+          "general": "General",
+          "ux-ui": "UX_UI_Website",
+          "event": "Event_Tradeshow",
+          "video": "Video_Animation",
+          "digital": "Digital_Paid_Campaign"
+        };
+        const payload: any = {}
+        Object.entries(briefData).forEach(([key, value]) => {
+          if (key === "projectType") {
+            payload["project_type"] = projectTypeMap[value as string] || undefined;
+          } else if (key === "projectKPI") {
+            payload["project_kpi"] = value;
+          } else {
+            payload[toSnake(key)] = value
+          }
+        })
+        if (Array.isArray(payload.links)) {
+          payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
+        }
+        if (!payload.organization_id && user?.organization) {
+          payload.organization_id = user.organization
+        }
+        if (user?.role === "client" && user.id) {
+          payload.client_id = user.id;
+        }
+        payload.attachments = uploadedFiles
+        if (recipient.managerId) {
+          payload.manager_ids = [recipient.managerId];
+        }
+        if (recipient.email) {
+          payload.email = recipient.email;
+        }
+        try {
+          const res = await fetch('/api/briefs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-user-role': 'client' },
+            body: JSON.stringify(payload),
+          })
+          if (res.ok) {
+            setSubmitStatus('success');
+            window.location.href = '/client/brief-success';
+          } else {
+            const errorData = await res.json().catch(() => ({}));
+            setSubmitError(errorData.error || 'Brief submission failed.');
+            setSubmitStatus('error');
+          }
+        } catch (error) {
+          setSubmitError('Brief submission error.');
+          setSubmitStatus('error');
+        }
+      }}
+      onSaveAndClose={handleSaveAndClose}
+      onCancel={handleStep8Cancel}
       submitStatus={submitStatus}
+      saveDraftError={saveDraftError}
+      submitError={submitError}
+      user={user}
     />
   }
 
@@ -293,11 +443,11 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
 
           {/* Actions */}
           <div className="space-y-3 pt-6 border-t">
-            <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
+            <Button variant="outline" className="w-full justify-start bg-transparent" size="sm" onClick={handleSaveAndClose}>
               <Save className="h-4 w-4 mr-2" />
               Save and close
             </Button>
-            <Button variant="outline" className="w-full justify-start bg-transparent" size="sm" onClick={onClose}>
+            <Button variant="outline" className="w-full justify-start bg-transparent" size="sm" onClick={() => setShowCancelConfirm(true)}>
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
@@ -414,6 +564,10 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                     />
                   </div>
                 </div>
+                <div className="flex justify-between items-center pt-8 border-t mt-8">
+                  <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium" disabled={currentStep === 1}>Back</Button>
+                  <Button onClick={handleNext} className="px-8 py-2 bg-brand-orange text-white rounded font-semibold text-base shadow hover:bg-orange-600 transition">Next</Button>
+                </div>
               </motion.div>
             )}
 
@@ -449,6 +603,10 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                     onChange={(value) => updateBriefData("technicalRequirements", value)}
                     placeholder="Any specific technical requirements?"
                   />
+                </div>
+                <div className="flex justify-between items-center pt-8 border-t mt-8">
+                  <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
+                  <Button onClick={handleNext} className="px-8 py-2 bg-brand-orange text-white rounded font-semibold text-base shadow hover:bg-orange-600 transition">Next</Button>
                 </div>
               </motion.div>
             )}
@@ -493,6 +651,10 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                     placeholder="What are the key features and benefits?"
                   />
                 </div>
+                <div className="flex justify-between items-center pt-8 border-t mt-8">
+                  <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
+                  <Button onClick={handleNext} className="px-8 py-2 bg-brand-orange text-white rounded font-semibold text-base shadow hover:bg-orange-600 transition">Next</Button>
+                </div>
               </motion.div>
             )}
 
@@ -536,6 +698,10 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                     placeholder="Who are your main competitors?"
                   />
                 </div>
+                <div className="flex justify-between items-center pt-8 border-t mt-8">
+                  <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
+                  <Button onClick={handleNext} className="px-8 py-2 bg-brand-orange text-white rounded font-semibold text-base shadow hover:bg-orange-600 transition">Next</Button>
+                </div>
               </motion.div>
             )}
 
@@ -565,6 +731,10 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                     placeholder="Tell us about your past campaigns and what you learned"
                   />
                 </div>
+                <div className="flex justify-between items-center pt-8 border-t mt-8">
+                  <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
+                  <Button onClick={handleNext} className="px-8 py-2 bg-brand-orange text-white rounded font-semibold text-base shadow hover:bg-orange-600 transition">Next</Button>
+                </div>
               </motion.div>
             )}
 
@@ -586,6 +756,10 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                     onChange={(value) => updateBriefData("touchpoints", value)}
                     placeholder="Where will your audience encounter this campaign? (e.g., website, social media, email, print)"
                   />
+                </div>
+                <div className="flex justify-between items-center pt-8 border-t mt-8">
+                  <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
+                  <Button onClick={handleNext} className="px-8 py-2 bg-brand-orange text-white rounded font-semibold text-base shadow hover:bg-orange-600 transition">Next</Button>
                 </div>
               </motion.div>
             )}
@@ -700,11 +874,9 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                     </button>
                   </div>
                 </div>
-
-                {/* Navigation Buttons */}
                 <div className="flex justify-between items-center pt-8 border-t mt-8">
                   <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
-                  <Button onClick={() => setCurrentStep(8)} className="px-8 py-2 bg-brand-orange text-white rounded font-semibold text-base shadow hover:bg-orange-600 transition">See Summary</Button>
+                  <Button onClick={handleNext} className="px-8 py-2 bg-brand-orange text-white rounded font-semibold text-base shadow hover:bg-orange-600 transition">Next</Button>
                 </div>
               </motion.div>
             )}
@@ -714,13 +886,145 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
               <BriefSummaryStreamlined
                 data={briefData}
                 onBack={() => setCurrentStep(7)}
-                onSubmit={handleSubmit}
+                onSubmit={async (recipient) => {
+                  setSubmitError(null);
+                  const toSnake = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+                  const projectTypeMap: Record<string, string> = {
+                    "general": "General",
+                    "ux-ui": "UX_UI_Website",
+                    "event": "Event_Tradeshow",
+                    "video": "Video_Animation",
+                    "digital": "Digital_Paid_Campaign"
+                  };
+                  const payload: any = {}
+                  Object.entries(briefData).forEach(([key, value]) => {
+                    if (key === "projectType") {
+                      payload["project_type"] = projectTypeMap[value as string] || undefined;
+                    } else if (key === "projectKPI") {
+                      payload["project_kpi"] = value;
+                    } else {
+                      payload[toSnake(key)] = value
+                    }
+                  })
+                  if (Array.isArray(payload.links)) {
+                    payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
+                  }
+                  if (!payload.organization_id && user?.organization) {
+                    payload.organization_id = user.organization
+                  }
+                  if (user?.role === "client" && user.id) {
+                    payload.client_id = user.id;
+                  }
+                  payload.attachments = uploadedFiles
+                  if (recipient.managerId) {
+                    payload.manager_ids = [recipient.managerId];
+                  }
+                  if (recipient.email) {
+                    payload.email = recipient.email;
+                  }
+                  try {
+                    const res = await fetch('/api/briefs', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'x-user-role': 'client' },
+                      body: JSON.stringify(payload),
+                    })
+                    if (res.ok) {
+                      setSubmitStatus('success');
+                      window.location.href = '/client/brief-success';
+                    } else {
+                      const errorData = await res.json().catch(() => ({}));
+                      setSubmitError(errorData.error || 'Brief submission failed.');
+                      setSubmitStatus('error');
+                    }
+                  } catch (error) {
+                    setSubmitError('Brief submission error.');
+                    setSubmitStatus('error');
+                  }
+                }}
+                onSaveAndClose={handleSaveAndClose}
+                onCancel={handleStep8Cancel}
                 submitStatus={submitStatus}
+                saveDraftError={saveDraftError}
+                submitError={submitError}
+                user={user}
               />
             )}
           </AnimatePresence>
         </div>
       </div>
+      <Dialog open={managerModalOpen} onOpenChange={setManagerModalOpen}>
+        <DialogContent>
+          <DialogTitle>Choose who you'd like to send this brief to</DialogTitle>
+          <div className="mb-2 text-sm text-gray-500">Select one or more managers from your organization:</div>
+          <div className="max-h-60 overflow-y-auto space-y-2 mb-2">
+            {managers.map(manager => (
+              <div key={manager.id} className={`flex items-center gap-2 p-2 rounded cursor-pointer ${selectedManagers.some((m: any) => m.id === manager.id) ? 'bg-gray-100' : ''}`}
+                onClick={() => setSelectedManagers(prev => prev.some((m: any) => m.id === manager.id)
+                  ? prev.filter((m: any) => m.id !== manager.id)
+                  : [...prev, manager])}
+              >
+                <Avatar className="w-8 h-8"><AvatarImage src={manager.avatar} /><AvatarFallback>{manager.name?.[0]}</AvatarFallback></Avatar>
+                <div>
+                  <div className="font-medium">{manager.name}</div>
+                  <div className="text-xs text-gray-500">{manager.email}</div>
+                </div>
+                <input type="checkbox" checked={selectedManagers.some((m: any) => m.id === manager.id)} readOnly className="ml-auto" />
+              </div>
+            ))}
+          </div>
+          {managerError && <div className="text-red-500 text-sm mb-2">{managerError}</div>}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setManagerModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleManagerConfirm} disabled={submitStatus === 'success'}>Send the brief</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Fallback overlay for debugging */}
+      {managerModalOpen && (
+        <div style={{position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          <div style={{background: 'white', padding: 32, borderRadius: 8, minWidth: 400}}>
+            <h2>DEBUG: Manager Modal Fallback</h2>
+            <div>Select one or more managers from your organization:</div>
+            <div style={{maxHeight: 200, overflowY: 'auto', margin: '16px 0'}}>
+              {managers.map(manager => (
+                <div key={manager.id} style={{padding: 8, background: selectedManagers.some((m: any) => m.id === manager.id) ? '#eee' : '#fff', cursor: 'pointer'}}
+                  onClick={() => setSelectedManagers(prev => prev.some((m: any) => m.id === manager.id)
+                    ? prev.filter((m: any) => m.id !== manager.id)
+                    : [...prev, manager])}
+                >
+                  {manager.name} ({manager.email})
+                </div>
+              ))}
+            </div>
+            <div style={{color: 'red'}}>{managerError}</div>
+            <div style={{display: 'flex', justifyContent: 'flex-end', gap: 8}}>
+              <button onClick={() => setManagerModalOpen(false)}>Cancel</button>
+              <button onClick={handleManagerConfirm}>Send the brief</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Cancel confirmation dialog */}
+      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <DialogContent>
+          <DialogTitle>Are you sure you want to cancel?</DialogTitle>
+          <div>All information you entered will be lost. This action cannot be undone.</div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>Go Back</Button>
+            <Button variant="destructive" onClick={onClose}>Yes, Cancel</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Step 8 Cancel confirmation dialog */}
+      <Dialog open={showStep8CancelConfirm} onOpenChange={setShowStep8CancelConfirm}>
+        <DialogContent>
+          <DialogTitle>All unsaved changes will be lost. Are you sure you want to cancel?</DialogTitle>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={handleStep8CancelDismiss}>Dismiss</Button>
+            <Button variant="destructive" onClick={handleStep8CancelConfirm}>Yes, Cancel</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

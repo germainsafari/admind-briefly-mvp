@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,55 +12,44 @@ import { Edit2 } from "lucide-react"
 interface ShareBriefModalEnhancedProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: () => void
+  onSubmit: (data: { managerId?: string; email?: string }) => void
+  organizationId: string
 }
 
-const mockContacts = [
-  {
-    id: "1",
-    name: "Martyna Florek",
-    email: "martyna.florek@admindagency.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: "2",
-    name: "Natalia Haligowska-Rzepa",
-    email: "natalia.haligowska-rzepa@admindagency.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: "3",
-    name: "Name Surname",
-    email: "name.surname@admindagency.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: "4",
-    name: "Name Surname",
-    email: "name.surname@admindagency.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: "5",
-    name: "Name Surname",
-    email: "name.surname@admindagency.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: "6",
-    name: "Name Surname",
-    email: "name.surname@admindagency.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-]
-
-export function ShareBriefModalEnhanced({ open, onOpenChange, onSubmit }: ShareBriefModalEnhancedProps) {
+export function ShareBriefModalEnhanced({ open, onOpenChange, onSubmit, organizationId }: ShareBriefModalEnhancedProps) {
+  const [managers, setManagers] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [selectedManager, setSelectedManager] = useState(null)
   const [email, setEmail] = useState("")
-  const [selectedContact, setSelectedContact] = useState("")
+
+  useEffect(() => {
+    if (open && organizationId) {
+      setLoading(true)
+      setError(null)
+      fetch(`/api/organizations/${organizationId}/managers`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch managers')
+          return res.json()
+        })
+        .then(data => {
+          setManagers(data)
+          setLoading(false)
+        })
+        .catch(e => {
+          setError('Could not load managers.')
+          setLoading(false)
+        })
+    }
+  }, [open, organizationId])
 
   const handleSubmit = () => {
-    onSubmit()
-  }
+    if (onSubmit) onSubmit({
+      managerId: selectedManager || undefined,
+      email: email || undefined
+    });
+    if (onOpenChange) onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,21 +87,21 @@ export function ShareBriefModalEnhanced({ open, onOpenChange, onSubmit }: ShareB
           {/* Contact Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-text">Choose from the list</Label>
-            <Select value={selectedContact} onValueChange={setSelectedContact}>
+            <Select value={selectedManager} onValueChange={setSelectedManager}>
               <SelectTrigger className="border-gray-200">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent className="max-h-60 card-bg">
-                {mockContacts.map((contact) => (
-                  <SelectItem key={contact.id} value={contact.id}>
+                {managers.map((manager) => (
+                  <SelectItem key={manager.id} value={manager.id}>
                     <div className="flex items-center space-x-3 py-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={contact.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>{contact.name.substring(0, 2)}</AvatarFallback>
+                        <AvatarImage src={manager.avatar || "/placeholder.svg"} />
+                        <AvatarFallback>{manager.name.substring(0, 2)}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-medium text-text">{contact.name}</span>
-                        <span className="text-sm text-text-muted">{contact.email}</span>
+                        <span className="font-medium text-text">{manager.name}</span>
+                        <span className="text-sm text-text-muted">{manager.email}</span>
                       </div>
                     </div>
                   </SelectItem>
@@ -129,7 +118,7 @@ export function ShareBriefModalEnhanced({ open, onOpenChange, onSubmit }: ShareB
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!email && !selectedContact}
+            disabled={!email && !selectedManager}
             className="accent-bg hover:accent-light-bg hover:text-accent-orange text-white"
           >
             Send the brief

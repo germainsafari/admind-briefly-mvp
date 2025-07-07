@@ -23,8 +23,13 @@ interface BriefSummaryData {
 interface BriefSummaryStreamlinedProps {
   data?: BriefSummaryData;
   onBack: () => void;
-  onSubmit: () => void;
+  onSubmit: (recipient: { managerId?: string, email?: string }) => void;
+  onSaveAndClose: () => void;
+  onCancel: () => void;
   submitStatus: string;
+  saveDraftError?: string | null;
+  submitError?: string | null;
+  user: any;
 }
 
 const briefSteps = [
@@ -38,22 +43,20 @@ const briefSteps = [
   { id: 8, title: "Brief summary", completed: false },
 ]
 
-export function BriefSummaryStreamlined({ data = {}, onBack, onSubmit, submitStatus }: BriefSummaryStreamlinedProps) {
+export function BriefSummaryStreamlined({ data = {}, onBack, onSubmit, onSaveAndClose, onCancel, submitStatus, saveDraftError, submitError, user }: BriefSummaryStreamlinedProps) {
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [showDetailModal, setShowDetailModal] = useState(false)
-
-  const handleSubmitBrief = () => {
-    setShowShareModal(false)
-    setShowSuccess(true)
-  }
 
   const handleViewDetails = () => {
     setShowDetailModal(true)
   }
 
-  if (showSuccess) {
-    return <BriefSuccessPage onBackToDashboard={() => (window.location.href = "/client")} />
+  // Called when user confirms sending in the modal
+  const handleSubmitBrief = (recipient: { managerId?: string, email?: string }) => {
+    setShowShareModal(false)
+    if (onSubmit) onSubmit(recipient); // Actually submit the brief with recipient
+    setShowSuccess(true)
   }
 
   return (
@@ -91,10 +94,10 @@ export function BriefSummaryStreamlined({ data = {}, onBack, onSubmit, submitSta
 
             {/* Actions */}
             <div className="space-y-3 pt-6 border-t">
-              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
+              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm" onClick={onSaveAndClose}>
                 Save and close
               </Button>
-              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm" onClick={onBack}>
+              <Button variant="outline" className="w-full justify-start bg-transparent" size="sm" onClick={onCancel}>
                 Cancel
               </Button>
             </div>
@@ -182,10 +185,11 @@ export function BriefSummaryStreamlined({ data = {}, onBack, onSubmit, submitSta
               </Card>
 
               {/* Navigation */}
-              <div className="flex justify-end pt-8">
-                <Button onClick={onSubmit} className="accent-bg text-white">Save & Submit</Button>
+              <div className="flex flex-col items-end pt-8 gap-2">
+                <Button onClick={() => setShowShareModal(true)} className="accent-bg text-white">Save & Submit</Button>
                 {submitStatus === 'success' && <div className="text-green-600 ml-4">Brief submitted successfully!</div>}
-                {submitStatus === 'error' && <div className="text-red-600 ml-4">There was an error submitting your brief.</div>}
+                {submitStatus === 'error' && submitError && <div className="text-red-600 ml-4">{submitError}</div>}
+                {saveDraftError && <div className="text-red-600 ml-4">{saveDraftError}</div>}
               </div>
             </div>
           </div>
@@ -193,8 +197,8 @@ export function BriefSummaryStreamlined({ data = {}, onBack, onSubmit, submitSta
       </div>
 
       {/* Modals */}
-      <ShareBriefModal open={showShareModal} onOpenChange={setShowShareModal} onSubmit={handleSubmitBrief} />
       <BriefDetailModal open={showDetailModal} onOpenChange={setShowDetailModal} brief={data} />
+      <ShareBriefModal open={showShareModal} onOpenChange={setShowShareModal} onSubmit={handleSubmitBrief} organizationId={user.organization} />
     </div>
   )
 }

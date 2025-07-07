@@ -18,7 +18,7 @@ interface Brief {
   project_type?: string
   status?: string | null
   creator?: { id: string | number; name: string; avatar?: string; email?: string } | null
-  manager?: { id: string | number; name: string; avatar?: string; email?: string } | null
+  managers?: { id: string | number; name: string; avatar?: string; email?: string }[];
   client?: { id: string | number; name: string; avatar?: string; email?: string } | null
   date: string
   organization?: { id: string | number; name: string }
@@ -58,10 +58,12 @@ const mockBriefs: Brief[] = [
       name: "Kung Fu Panda",
       avatar: "/placeholder.svg?height=32&width=32",
     },
-    manager: {
-      name: "Natalia Haligowska-Rzepa",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
+    managers: [
+      {
+        name: "Natalia Haligowska-Rzepa",
+        avatar: "/placeholder.svg?height=32&width=32",
+      },
+    ],
     date: "2025-06-21",
   },
   {
@@ -73,10 +75,12 @@ const mockBriefs: Brief[] = [
       name: "Max Johnson",
       avatar: "/placeholder.svg?height=32&width=32",
     },
-    manager: {
-      name: "Martyna Florek",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
+    managers: [
+      {
+        name: "Martyna Florek",
+        avatar: "/placeholder.svg?height=32&width=32",
+      },
+    ],
     date: "2025-06-20",
   },
 ]
@@ -232,8 +236,16 @@ export function BriefsList({ onBriefDeleted }: BriefsListProps) {
               </div>
               {/* Brief manager */}
               <div className="flex items-center gap-2 min-w-0">
-                {brief.manager?.avatar && <Avatar className="w-7 h-7"><AvatarImage src={brief.manager.avatar} /><AvatarFallback>{brief.manager.name?.[0]}</AvatarFallback></Avatar>}
-                <span className="truncate">{brief.manager?.name}</span>
+                {Array.isArray(brief.managers) && brief.managers.length > 0 ? (
+                  brief.managers.map(manager => (
+                    <div key={manager.id} className="flex items-center gap-1">
+                      <Avatar className="w-7 h-7"><AvatarImage src={manager.avatar} /><AvatarFallback>{manager.name?.[0]}</AvatarFallback></Avatar>
+                      <span className="truncate">{manager.name}</span>
+                    </div>
+                  ))
+                ) : (
+                  <span className="text-gray-400">No manager</span>
+                )}
               </div>
               {/* Date of inquiry */}
               <div className="text-gray-700">

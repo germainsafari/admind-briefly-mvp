@@ -69,7 +69,7 @@ model Manager {
   organization_id Int?
   status         ManagerStatus @default(active)
   role           UserRole      @default(manager)
-  briefsCreated  Brief[]      @relation("BriefCreator")
+  briefs         Brief[]      @relation("BriefManagers") // Many-to-many
   created_at     DateTime     @default(now())
   updated_at     DateTime     @updatedAt
 }
@@ -83,7 +83,7 @@ model Client {
   organization   Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
   organization_id Int?
   status         ClientStatus @default(active)
-  briefs         Brief[]      @relation("BriefClient")
+  briefs         Brief[]      // All briefs created by this client
   created_at     DateTime     @default(now())
   updated_at     DateTime     @updatedAt
 }
@@ -116,10 +116,9 @@ model Brief {
   final_notes           String?
   attachments           String[]
   links                 String[]
-  creator               Manager?     @relation("BriefCreator", fields: [creator_id], references: [id], onDelete: SetNull)
-  creator_id            Int?
-  client                Client?      @relation("BriefClient", fields: [client_id], references: [id], onDelete: SetNull)
-  client_id             Int?
+  client                Client       @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  client_id             Int
+  managers              Manager[]    @relation("BriefManagers") // Many-to-many
   organization          Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   organization_id       Int
   status                BriefStatus  @default(New)

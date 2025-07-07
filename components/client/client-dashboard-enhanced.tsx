@@ -23,6 +23,8 @@ interface ClientBrief {
   status: "Draft" | "Sent" | "Shared"
   progress?: number
   date: string
+  updated_at?: string
+  sent_at?: string
   editable: boolean
 }
 
@@ -61,6 +63,8 @@ export function ClientDashboardEnhanced() {
               status: brief.status === "New" ? "Draft" : brief.status, // Map as needed
               progress: brief.progress,
               date: brief.created_at,
+              updated_at: brief.updated_at,
+              sent_at: brief.sent_at,
               editable: true, // Set based on your logic
             }))
           : []
@@ -385,57 +389,76 @@ export function ClientDashboardEnhanced() {
                             </div>
                           </div>
 
-                          {/* Status */}
+                          {/* Status (with progress for drafts) */}
                           <div className="col-span-2">
-                            <div className="flex items-center space-x-2">
-                              {getStatusBadge(brief.status)}
-                            </div>
+                            {brief.status === "Draft" ? (
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">Draft</Badge>
+                                  {typeof brief.progress === 'number' && (
+                                    <span className="text-xs text-gray-500 font-medium">{brief.progress}%</span>
+                                  )}
+                                </div>
+                                {typeof brief.progress === 'number' && (
+                                  <Progress value={brief.progress} className="h-2 bg-blue-100" />
+                                )}
+                              </div>
+                            ) : (
+                              <Badge className="bg-green-100 text-green-800 border-green-200">Sent</Badge>
+                            )}
                           </div>
 
-                          {/* Date */}
+                          {/* Date of inquiry */}
                           <div className="col-span-3">
                             <span className="text-sm">
-                              {brief.date ? new Date(brief.date).toLocaleDateString("en-GB") : "-"}
+                              {brief.status === "Draft"
+                                ? (brief.updated_at ? new Date(brief.updated_at).toLocaleDateString("en-GB") : (brief.date ? new Date(brief.date).toLocaleDateString("en-GB") : "-"))
+                                : (brief.sent_at ? new Date(brief.sent_at).toLocaleDateString("en-GB") : (brief.date ? new Date(brief.date).toLocaleDateString("en-GB") : "-"))}
                             </span>
                           </div>
 
                           {/* Actions */}
                           <div className="col-span-2 flex justify-end space-x-2">
-                            {/* Delete Draft (only for Drafts) */}
+                            {/* Draft actions */}
                             {brief.status === "Draft" && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" onClick={() => handleAction("delete", brief)}>
-                                    <Trash2 className="h-5 w-5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Delete draft</TooltipContent>
-                              </Tooltip>
-                            )}
-                            {/* Duplicate (for all briefs) */}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => handleDuplicate(brief)}>
-                                  <Copy className="h-5 w-5" />
+                              <>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => handleAction("delete", brief)}>
+                                      <Trash2 className="h-5 w-5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Delete draft</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDuplicate(brief)}>
+                                      <Copy className="h-5 w-5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Duplicate</TooltipContent>
+                                </Tooltip>
+                                <Button variant="outline" size="sm" onClick={() => { setEditBriefData(brief); setShowEditWizard(true); }}>
+                                  Continue writing
                                 </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Duplicate</TooltipContent>
-                            </Tooltip>
-                            {/* Update (only for Sent) */}
-                            {brief.status === "Sent" && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" onClick={() => handleUpdate(brief)}>
-                                    <RotateCcw className="h-5 w-5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Update</TooltipContent>
-                              </Tooltip>
+                              </>
                             )}
-                            {/* See Summary */}
-                            <Button variant="outline" size="sm" onClick={() => handleSeeSummary(brief)}>
-                              See Summary
-                            </Button>
+                            {/* Sent actions */}
+                            {brief.status === "Sent" && (
+                              <>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDuplicate(brief)}>
+                                      <Copy className="h-5 w-5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Duplicate</TooltipContent>
+                                </Tooltip>
+                                <Button variant="outline" size="sm" onClick={() => handleSeeSummary(brief)}>
+                                  See Summary
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </CardContent>
