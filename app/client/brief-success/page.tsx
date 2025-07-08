@@ -2,12 +2,12 @@
 
 import { BriefSuccessPage } from "@/components/client/brief-success-page"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 
-export default function BriefSuccessRoute() {
+function BriefSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const id = searchParams.get("id");
+  const id = searchParams?.get("id");
   const [brief, setBrief] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,4 +35,12 @@ export default function BriefSuccessRoute() {
   if (error) return <div className="p-8 text-red-500">{error}</div>;
 
   return <BriefSuccessPage onBackToDashboard={() => router.push('/client')} brief={brief} />;
+}
+
+export default function BriefSuccessRoute() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <BriefSuccessContent />
+    </Suspense>
+  );
 } 
