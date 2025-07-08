@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/lib/auth-context"
+import { useMsGraph } from "@/hooks/useMsGraph"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 
 export function Header() {
   const { user, logout } = useAuth()
+  const { session, signOut } = useMsGraph()
 
   return (
     <header className="gradient-header">
@@ -71,34 +73,21 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2 px-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar || "/placeholder.svg?height=32&width=32"} />
-                    <AvatarFallback>{user?.name?.split(" ").map(n => n[0]).join("") || "U"}</AvatarFallback>
+                    <AvatarImage src={session?.user?.image || "/placeholder.svg?height=32&width=32"} />
+                    <AvatarFallback>{session?.user?.name?.split(" ").map(n => n[0]).join("") || "U"}</AvatarFallback>
                   </Avatar>
                   <div className="text-left">
-                    <div className="text-sm font-medium">{user?.name || "User"}</div>
-                    <div className="text-xs text-gray-500">{user?.organization || "Organization"}</div>
+                    <div className="text-sm font-medium">{session?.user?.name || "User"}</div>
+                    <div className="text-xs text-gray-500">{session?.user?.email || ""}</div>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" aria-label="User menu">
-                {user?.role === "client" ? (
-                  <Link href="/client/profile" legacyBehavior passHref>
-                    <DropdownMenuItem asChild>
-                      <a>Profile</a>
-                    </DropdownMenuItem>
-                  </Link>
-                ) : (
-                  <Link href={user ? `/admin/users/${user.id}` : "#"} legacyBehavior passHref>
-                    <DropdownMenuItem asChild>
-                      <a>Profile</a>
-                    </DropdownMenuItem>
-                  </Link>
-                )}
-                <DropdownMenuItem>Onboarding</DropdownMenuItem>
+                <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
                     logout()
-                    window.location.href = "/"
+                    signOut()
                   }}
                 >
                   Logout
