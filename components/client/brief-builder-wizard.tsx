@@ -507,40 +507,55 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                     </div>
                   </div>
 
-                  <AITextArea
-                    label="Project description"
-                    value={briefData.projectDescription}
-                    onChange={(value) => updateBriefData("projectDescription", value)}
-                    placeholder="Describe your project in detail..."
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Project description</label>
+                    <textarea
+                      value={briefData.projectDescription}
+                      onChange={e => updateBriefData("projectDescription", e.target.value)}
+                      placeholder="Describe your project in detail..."
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Business Goals"
-                    value={briefData.businessGoals}
-                    onChange={(value) => updateBriefData("businessGoals", value)}
-                    placeholder="What are your main business objectives?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Business Goals</label>
+                    <textarea
+                      value={briefData.businessGoals}
+                      onChange={e => updateBriefData("businessGoals", e.target.value)}
+                      placeholder="What are your main business objectives?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Communication Goals"
-                    value={briefData.communicationGoals}
-                    onChange={(value) => updateBriefData("communicationGoals", value)}
-                    placeholder="What message do you want to communicate?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Communication Goals</label>
+                    <textarea
+                      value={briefData.communicationGoals}
+                      onChange={e => updateBriefData("communicationGoals", e.target.value)}
+                      placeholder="What message do you want to communicate?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Project KPI"
-                    value={briefData.projectKPI}
-                    onChange={(value) => updateBriefData("projectKPI", value)}
-                    placeholder="How will you measure success?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Project KPI</label>
+                    <textarea
+                      value={briefData.projectKPI}
+                      onChange={e => updateBriefData("projectKPI", e.target.value)}
+                      placeholder="How will you measure success?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Challenge"
-                    value={briefData.challenge}
-                    onChange={(value) => updateBriefData("challenge", value)}
-                    placeholder="What challenges are you trying to solve?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Challenge</label>
+                    <textarea
+                      value={briefData.challenge}
+                      onChange={e => updateBriefData("challenge", e.target.value)}
+                      placeholder="What challenges are you trying to solve?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
                   <div>
                     <Label htmlFor="timeline" className="text-sm font-medium">
@@ -587,26 +602,35 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                 <h1 className="text-3xl font-bold">2. Project Scope and Requirements</h1>
 
                 <div className="space-y-6">
-                  <AITextArea
-                    label="Agency Scope and Deliverables"
-                    value={briefData.agencyScope}
-                    onChange={(value) => updateBriefData("agencyScope", value)}
-                    placeholder="What specific deliverables do you need?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Agency Scope and Deliverables</label>
+                    <textarea
+                      value={briefData.agencyScope}
+                      onChange={e => updateBriefData("agencyScope", e.target.value)}
+                      placeholder="What specific deliverables do you need?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Mandatories and Restrictions / Policies"
-                    value={briefData.mandatories}
-                    onChange={(value) => updateBriefData("mandatories", value)}
-                    placeholder="Any mandatory requirements or restrictions?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Mandatories and Restrictions / Policies</label>
+                    <textarea
+                      value={briefData.mandatories}
+                      onChange={e => updateBriefData("mandatories", e.target.value)}
+                      placeholder="Any mandatory requirements or restrictions?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Technical Requirements"
-                    value={briefData.technicalRequirements}
-                    onChange={(value) => updateBriefData("technicalRequirements", value)}
-                    placeholder="Any specific technical requirements?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Technical Requirements</label>
+                    <textarea
+                      value={briefData.technicalRequirements}
+                      onChange={e => updateBriefData("technicalRequirements", e.target.value)}
+                      placeholder="Any specific technical requirements?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between items-center pt-8 border-t mt-8">
                   <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
@@ -627,33 +651,45 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                 <h1 className="text-3xl font-bold">3. Audience and Insights</h1>
 
                 <div className="space-y-6">
-                  <AITextArea
-                    label="Target Audience"
-                    value={briefData.targetAudience}
-                    onChange={(value) => updateBriefData("targetAudience", value)}
-                    placeholder="Who is your target audience?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Target Audience</label>
+                    <textarea
+                      value={briefData.targetAudience}
+                      onChange={e => updateBriefData("targetAudience", e.target.value)}
+                      placeholder="Who is your target audience?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Internal TG - Internal Stakeholders"
-                    value={briefData.internalStakeholders}
-                    onChange={(value) => updateBriefData("internalStakeholders", value)}
-                    placeholder="Who are the internal stakeholders?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Internal TG - Internal Stakeholders</label>
+                    <textarea
+                      value={briefData.internalStakeholders}
+                      onChange={e => updateBriefData("internalStakeholders", e.target.value)}
+                      placeholder="Who are the internal stakeholders?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Consumer Insight"
-                    value={briefData.consumerInsight}
-                    onChange={(value) => updateBriefData("consumerInsight", value)}
-                    placeholder="What insights do you have about your consumers?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Consumer Insight</label>
+                    <textarea
+                      value={briefData.consumerInsight}
+                      onChange={e => updateBriefData("consumerInsight", e.target.value)}
+                      placeholder="What insights do you have about your consumers?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="RTB, Features and Benefits"
-                    value={briefData.rtbFeatures}
-                    onChange={(value) => updateBriefData("rtbFeatures", value)}
-                    placeholder="What are the key features and benefits?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">RTB, Features and Benefits</label>
+                    <textarea
+                      value={briefData.rtbFeatures}
+                      onChange={e => updateBriefData("rtbFeatures", e.target.value)}
+                      placeholder="What are the key features and benefits?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between items-center pt-8 border-t mt-8">
                   <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
@@ -674,33 +710,45 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                 <h1 className="text-3xl font-bold">4. Strategic Input</h1>
 
                 <div className="space-y-6">
-                  <AITextArea
-                    label="Key Message"
-                    value={briefData.keyMessage}
-                    onChange={(value) => updateBriefData("keyMessage", value)}
-                    placeholder="What is your key message?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Key Message</label>
+                    <textarea
+                      value={briefData.keyMessage}
+                      onChange={e => updateBriefData("keyMessage", e.target.value)}
+                      placeholder="What is your key message?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Value Proposition and USP"
-                    value={briefData.valueProposition}
-                    onChange={(value) => updateBriefData("valueProposition", value)}
-                    placeholder="What is your unique value proposition?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Value Proposition and USP</label>
+                    <textarea
+                      value={briefData.valueProposition}
+                      onChange={e => updateBriefData("valueProposition", e.target.value)}
+                      placeholder="What is your unique value proposition?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Tone of Voice"
-                    value={briefData.toneOfVoice}
-                    onChange={(value) => updateBriefData("toneOfVoice", value)}
-                    placeholder="How should we communicate? (e.g., professional, friendly, authoritative)"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Tone of Voice</label>
+                    <textarea
+                      value={briefData.toneOfVoice}
+                      onChange={e => updateBriefData("toneOfVoice", e.target.value)}
+                      placeholder="How should we communicate? (e.g., professional, friendly, authoritative)"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Market and Competition"
-                    value={briefData.marketCompetition}
-                    onChange={(value) => updateBriefData("marketCompetition", value)}
-                    placeholder="Who are your main competitors?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Market and Competition</label>
+                    <textarea
+                      value={briefData.marketCompetition}
+                      onChange={e => updateBriefData("marketCompetition", e.target.value)}
+                      placeholder="Who are your main competitors?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between items-center pt-8 border-t mt-8">
                   <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
@@ -721,19 +769,25 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                 <h1 className="text-3xl font-bold">5. References and Context</h1>
 
                 <div className="space-y-6">
-                  <AITextArea
-                    label="Inspirations/Benchmarks/References"
-                    value={briefData.inspirations}
-                    onChange={(value) => updateBriefData("inspirations", value)}
-                    placeholder="Any inspirational examples or benchmarks?"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Inspirations/Benchmarks/References</label>
+                    <textarea
+                      value={briefData.inspirations}
+                      onChange={e => updateBriefData("inspirations", e.target.value)}
+                      placeholder="Any inspirational examples or benchmarks?"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
 
-                  <AITextArea
-                    label="Past Communication, Campaigns and Insights"
-                    value={briefData.pastCommunication}
-                    onChange={(value) => updateBriefData("pastCommunication", value)}
-                    placeholder="Tell us about your past campaigns and what you learned"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Past Communication, Campaigns and Insights</label>
+                    <textarea
+                      value={briefData.pastCommunication}
+                      onChange={e => updateBriefData("pastCommunication", e.target.value)}
+                      placeholder="Tell us about your past campaigns and what you learned"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between items-center pt-8 border-t mt-8">
                   <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
@@ -754,12 +808,15 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                 <h1 className="text-3xl font-bold">6. Channels and Touchpoints</h1>
 
                 <div className="space-y-6">
-                  <AITextArea
-                    label="Touchpoints"
-                    value={briefData.touchpoints}
-                    onChange={(value) => updateBriefData("touchpoints", value)}
-                    placeholder="Where will your audience encounter this campaign? (e.g., website, social media, email, print)"
-                  />
+                  <div className="space-y-2">
+                    <label className="block text-base font-semibold text-gray-800 mb-1">Touchpoints</label>
+                    <textarea
+                      value={briefData.touchpoints}
+                      onChange={e => updateBriefData("touchpoints", e.target.value)}
+                      placeholder="Where will your audience encounter this campaign? (e.g., website, social media, email, print)"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-orange min-h-[100px] resize-none bg-white"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between items-center pt-8 border-t mt-8">
                   <Button variant="outline" onClick={handleBack} className="px-6 py-2 rounded font-medium">Back</Button>
