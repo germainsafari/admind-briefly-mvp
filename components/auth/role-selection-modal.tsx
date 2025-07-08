@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuth, type UserRole } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import { useMsGraph } from "@/hooks/useMsGraph"
 
 interface RoleSelectionModalProps {
   open: boolean
@@ -45,6 +46,7 @@ export function RoleSelectionModal({ open, onOpenChange }: RoleSelectionModalPro
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
+  const { signIn } = useMsGraph()
   const router = useRouter()
 
   const handleRoleSelect = (role: UserRole) => {
@@ -56,14 +58,8 @@ export function RoleSelectionModal({ open, onOpenChange }: RoleSelectionModalPro
 
     setIsLoading(true)
 
-    // Simulate authentication delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
     login(selectedRole)
-    onOpenChange(false)
-    router.push(`/${selectedRole}`)
-
-    setIsLoading(false)
+    await signIn()
   }
 
   return (

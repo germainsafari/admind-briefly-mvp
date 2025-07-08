@@ -2,9 +2,11 @@
 
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
+import { useMsGraph } from "@/hooks/useMsGraph"
 
 export function DebugUserInfo() {
   const { user, logout } = useAuth()
+  const { session, signOut, sendEmail, getInbox } = useMsGraph()
 
   const clearLocalStorage = () => {
     localStorage.removeItem("admind_user")
@@ -32,18 +34,15 @@ export function DebugUserInfo() {
       </div>
       
       <div className="mt-3 space-x-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={logout}
-        >
+        <Button variant="outline" size="sm" onClick={logout}>
           Logout
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={clearLocalStorage}
-        >
+        <Button variant="outline" size="sm" onClick={signOut}>
+          Sign out (NextAuth)
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => sendEmail(user.email, 'Test', '<p>Hello</p>')}>Send Test Email</Button>
+        <Button variant="outline" size="sm" onClick={async () => console.log(await getInbox())}>Fetch Inbox</Button>
+        <Button variant="outline" size="sm" onClick={clearLocalStorage}>
           Clear localStorage
         </Button>
       </div>
