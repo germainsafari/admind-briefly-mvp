@@ -836,18 +836,11 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                       if (["mp4", "mov", "avi"].includes(ext)) icon = <span className="inline-block w-5 h-5 bg-green-200 rounded mr-2" />;
 
                       // New: Secure SAS download handler
-                      const handleViewClick = async () => {
-                        try {
-                          const res = await fetch(`/api/azure-sas-url?filename=${encodeURIComponent(fileName)}`);
-                          const data = await res.json();
-                          if (data.url) {
-                            window.open(data.url, '_blank', 'noopener,noreferrer');
-                          } else {
-                            alert('Failed to generate secure download link.');
-                          }
-                        } catch (err) {
-                          alert('Error generating download link.');
-                        }
+                      const handleViewClick = () => {
+                        const accountName = process.env.NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME;
+                        const containerName = process.env.NEXT_PUBLIC_AZURE_STORAGE_CONTAINER_NAME;
+                        const publicUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${fileName}`;
+                        window.open(publicUrl, '_blank', 'noopener,noreferrer');
                       };
 
                       return (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Plus, Trash2, Copy, RotateCcw } from "lucide-react"
+import { Plus, Trash2, Copy, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -46,37 +46,63 @@ export function ClientDashboardEnhanced() {
   const [editBriefData, setEditBriefData] = useState<any | null>(null)
   const [showEditWizard, setShowEditWizard] = useState(false)
 
+  const filteredBriefs = Array.isArray(briefs) ? briefs.filter((brief) => {
+    if (activeTab === "sent" && brief.status !== "Sent") return false
+    if (activeTab === "drafts" && brief.status !== "Draft") return false
+    if (activeTab === "shared" && brief.status !== "Shared") return false
+    if (selectedTypes.length > 0 && !selectedTypes.includes(brief.type)) return false
+    return true
+  }) : [];
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const briefsPerPage = 10;
+  const [totalBriefs, setTotalBriefs] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(totalBriefs / briefsPerPage));
+  const paginatedBriefs = filteredBriefs; // Backend already paginates
+
+  // Reset to page 1 when filters or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, selectedTypes, activeTab]);
+
+  useEffect(() => {
+    fetchBriefs();
+  }, [currentPage, sortBy, selectedTypes, activeTab]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
   const fetchBriefs = async () => {
     try {
-      const res = await fetch('/api/briefs')
+      const res = await fetch(`/api/briefs?client_id=${user.id}&page=${currentPage}&limit=${briefsPerPage}`);
       if (!res.ok) {
-        setBriefs([])
-        return
+        setBriefs([]);
+        setTotalBriefs(0);
+        return;
       }
-      const data = await res.json()
+      const data = await res.json();
       setBriefs(
         Array.isArray(data.data)
           ? data.data.map((brief: any) => ({
               id: brief.id,
               projectName: brief.project_name,
               type: (brief.project_type || "").replace(/_/g, "/"),
-              status: brief.status === "New" ? "Draft" : brief.status, // Map as needed
+              status: brief.status, // Use real status from backend
               progress: brief.progress,
               date: brief.created_at,
               updated_at: brief.updated_at,
               sent_at: brief.sent_at,
-              editable: true, // Set based on your logic
+              editable: brief.status === 'Draft', // Only drafts are editable
             }))
           : []
-      )
+      );
+      setTotalBriefs(data.total || 0);
     } catch {
-      setBriefs([])
+      setBriefs([]);
+      setTotalBriefs(0);
     }
   }
-
-  useEffect(() => {
-    fetchBriefs()
-  }, [])
 
   useEffect(() => {
     if (typeof window !== 'undefined' && briefs.length > 0) {
@@ -95,27 +121,6 @@ export function ClientDashboardEnhanced() {
     sent: briefs.filter((b) => b.status === "Sent").length,
     drafts: briefs.filter((b) => b.status === "Draft").length,
     shared: briefs.filter((b) => b.status === "Shared").length,
-  }
-
-  const filteredBriefs = Array.isArray(briefs) ? briefs.filter((brief) => {
-    if (activeTab === "sent" && brief.status !== "Sent") return false
-    if (activeTab === "drafts" && brief.status !== "Draft") return false
-    if (activeTab === "shared" && brief.status !== "Shared") return false
-    if (selectedTypes.length > 0 && !selectedTypes.includes(brief.type)) return false
-    return true
-  }) : [];
-
-  const getStatusBadge = (status: ClientBrief["status"]) => {
-    switch (status) {
-      case "Draft":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Draft</Badge>
-      case "Sent":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Sent</Badge>
-      case "Shared":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Sent</Badge>
-      default:
-        return null
-    }
   }
 
   const handleAction = async (action: string, brief: ClientBrief) => {
@@ -358,7 +363,7 @@ export function ClientDashboardEnhanced() {
             {/* Briefs List */}
             <div className="space-y-2">
               <TooltipProvider>
-                {filteredBriefs.map((brief, index) => (
+                {paginatedBriefs.map((brief, index) => (
                   <motion.div
                     key={brief.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -456,6 +461,40 @@ export function ClientDashboardEnhanced() {
                   </motion.div>
                 ))}
               </TooltipProvider>
+            </div>
+            {/* Pagination */}
+            <div className="flex items-center justify-center pt-4">
+              <Button
+                variant="ghost"
+                className="text-text-muted flex items-center"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="icon-20 mr-4" />
+                Previous
+              </Button>
+              <div className="flex space-x-2 mx-4">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? "default" : "ghost"}
+                    size="sm"
+                    className={page === currentPage ? "btn-solid-dark" : "text-text-muted"}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="ghost"
+                className="text-text-muted flex items-center"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="icon-20 ml-4" />
+              </Button>
             </div>
           </div>
         </div>

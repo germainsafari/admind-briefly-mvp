@@ -7,40 +7,42 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '10', 10);
   const skip = (page - 1) * limit;
 
+  const clientId = searchParams.get('client_id');
+
+  const where: any = {};
+  if (clientId) {
+    where.client_id = Number(clientId);
+  }
+
   const [briefs, total] = await Promise.all([
     prisma.brief.findMany({
       skip,
       take: limit,
       orderBy: { id: 'desc' },
+      where,
       include: {
         client: { select: { id: true, name: true, avatar: true, email: true } },
         managers: { select: { id: true, name: true, avatar: true, email: true } },
         organization: { select: { id: true, name: true } },
       },
-    }),
-    prisma.brief.count(),
+    }) as any,
+    prisma.brief.count({ where }),
   ]);
 
   // Map to frontend-friendly format with all fields
-  const mapped = briefs.map(brief => {
-    const createdAt = new Date(brief.created_at);
-    const now = new Date();
-    const daysDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-    let status = null;
-    if (daysDiff < 3) status = 'New';
-
+  const mapped = briefs.map((brief: any) => {
     return {
       id: brief.id,
       project_name: brief.project_name,
       project_type: brief.project_type,
-      status,
+      status: brief.status, // Use actual DB status
       creator: brief.client ? {
         id: brief.client.id,
         name: brief.client.name,
         avatar: brief.client.avatar,
         email: brief.client.email,
       } : null,
-      managers: Array.isArray(brief.managers) ? brief.managers.map(m => ({
+      managers: Array.isArray(brief.managers) ? brief.managers.map((m: any) => ({
         id: m.id,
         name: m.name,
         avatar: m.avatar,
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
       })) : [],
       date: brief.created_at,
       updated_at: brief.updated_at,
-      sent_at: brief.created_at,
+      sent_at: brief["sent_at"] || brief.created_at,
       organization: brief.organization,
       project_description: brief.project_description,
       business_goals: brief.business_goals,
@@ -130,7 +132,7 @@ export async function POST(req: NextRequest) {
     delete data.client_id;
     delete data.creator_id;
     delete data.manager_id;
-    delete data.manager_ids;
+    // delete data.manager_ids; // Don't delete, we need it below
 
     // Build Prisma data object
     const prismaData: any = {
@@ -139,10 +141,13 @@ export async function POST(req: NextRequest) {
       links: data.links || [],
       client: { connect: { id: clientId } },
       organization: { connect: { id: orgId } },
+      status: data.status || 'Draft',
     };
-    // Connect managers (many-to-many)
+    // Connect managers (many-to-many) using the relation API
     if (Array.isArray(data.manager_ids) && data.manager_ids.length > 0) {
       prismaData.managers = { connect: data.manager_ids.map((id: any) => ({ id: Number(id) })) };
+      // Do NOT include manager_ids as a top-level field
+      delete prismaData.manager_ids;
     }
 
     // Coerce numbers if present
@@ -157,7 +162,19 @@ export async function POST(req: NextRequest) {
       data.links = data.links.filter((l: string) => l && l.length > 0);
     }
 
-    const brief = await prisma.brief.create({ data: prismaData });
+    // Set sent_at if status is Sent and the field exists in the schema
+    if (prismaData.status === 'Sent') {
+      // Only set sent_at if it is a valid field in the schema
+      if ('sent_at' in prisma.brief.fields) {
+        prismaData.sent_at = new Date();
+      } else {
+        delete prismaData.sent_at;
+      }
+    } else {
+      delete prismaData.sent_at;
+    }
+
+    const brief = await prisma.brief.create({ data: prismaData, include: { managers: true } });
     return NextResponse.json(brief);
   } catch (err) {
     console.error('PRISMA ERROR:', err);

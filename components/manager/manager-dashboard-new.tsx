@@ -146,8 +146,8 @@ export function ManagerDashboardNew() {
     return 0;
   });
 
-  const briefsPerPage = 15;
-  const totalPages = Math.ceil(sortedBriefs.length / briefsPerPage);
+  const briefsPerPage = 10;
+  const totalPages = Math.max(1, Math.ceil(sortedBriefs.length / briefsPerPage));
   const paginatedBriefs = sortedBriefs.slice((currentPage - 1) * briefsPerPage, currentPage * briefsPerPage);
 
   // Reset to page 1 when filters or sort change
@@ -399,41 +399,39 @@ export function ManagerDashboardNew() {
             </Card>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-4">
-                <Button
-                  variant="ghost"
-                  className="text-text-muted flex items-center"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="icon-20 mr-4" />
-                  Previous
-                </Button>
-                <div className="flex space-x-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={page === currentPage ? "default" : "ghost"}
-                      size="sm"
-                      className={page === currentPage ? "btn-solid-dark" : "text-text-muted"}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
-                    </Button>
-                  ))}
-                </div>
-                <Button
-                  variant="ghost"
-                  className="text-text-muted flex items-center"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                  <ChevronRight className="icon-20 ml-4" />
-                </Button>
+            <div className="flex items-center justify-center pt-4">
+              <Button
+                variant="ghost"
+                className="text-text-muted flex items-center"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="icon-20 mr-4" />
+                Previous
+              </Button>
+              <div className="flex space-x-2 mx-4">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? "default" : "ghost"}
+                    size="sm"
+                    className={page === currentPage ? "btn-solid-dark" : "text-text-muted"}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
               </div>
-            )}
+              <Button
+                variant="ghost"
+                className="text-text-muted flex items-center"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="icon-20 ml-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
