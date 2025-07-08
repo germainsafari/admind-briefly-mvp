@@ -186,6 +186,12 @@ export async function PUT(req: NextRequest) {
   const data = await req.json();
   const { id, ...fields } = data;
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+  // Remove organization_id from update payload to prevent changing organization on update
+  if ('organization_id' in fields) {
+    delete fields.organization_id;
+  }
+
   const brief = await prisma.brief.update({ where: { id }, data: fields });
   return NextResponse.json(brief);
 }

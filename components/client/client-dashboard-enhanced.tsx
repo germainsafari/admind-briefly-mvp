@@ -15,6 +15,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { BriefDetailModal } from "./brief-detail-modal"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAuth } from "@/lib/auth-context"
+import { useToast } from '@/hooks/use-toast'
 
 interface ClientBrief {
   id: string
@@ -32,6 +33,7 @@ const briefTypes = ["General", "UX/UI Website", "Event/Tradeshow", "Video/Animat
 
 export function ClientDashboardEnhanced() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [briefs, setBriefs] = useState<ClientBrief[]>([])
   const [activeTab, setActiveTab] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
@@ -170,43 +172,63 @@ export function ClientDashboardEnhanced() {
   }
 
   // Duplicate a brief (creates a new draft with the same data, but no id or date)
-  const handleDuplicate = (brief: any) => {
-    const {
-      id, date, status, progress, editable, ...rest
-    } = brief;
-    setEditBriefData({
+  const handleDuplicate = async (brief: any) => {
+    const { id, date, status, progress, editable, updated_at, sent_at, ...rest } = brief;
+    // Map all fields for payload
+    const payload = {
       ...rest,
       status: "Draft",
-      // Map all fields for initialData
-      projectName: brief.projectName || brief.project_name || "",
-      projectType: brief.type || brief.project_type || "",
-      projectDescription: brief.projectDescription || brief.project_description || "",
-      businessGoals: brief.businessGoals || brief.business_goals || "",
-      communicationGoals: brief.communicationGoals || brief.communication_goals || "",
-      projectKPI: brief.projectKPI || brief.project_kpi || "",
+      project_name: brief.projectName || brief.project_name || "",
+      project_type: brief.type || brief.project_type || "",
+      project_description: brief.projectDescription || brief.project_description || "",
+      business_goals: brief.businessGoals || brief.business_goals || "",
+      communication_goals: brief.communicationGoals || brief.communication_goals || "",
+      project_kpi: brief.projectKPI || brief.project_kpi || "",
       challenge: brief.challenge || "",
-      timelineExpectations: brief.timelineExpectations || brief.timeline_expectations || "",
-      projectBudget: brief.projectBudget || brief.project_budget || "",
-      agencyScope: brief.agencyScope || brief.agency_scope || "",
+      timeline_expectations: brief.timelineExpectations || brief.timeline_expectations || "",
+      project_budget: brief.projectBudget || brief.project_budget || "",
+      agency_scope: brief.agencyScope || brief.agency_scope || "",
       mandatories: brief.mandatories || "",
-      technicalRequirements: brief.technicalRequirements || brief.technical_requirements || "",
-      targetAudience: brief.targetAudience || brief.target_audience || "",
-      internalStakeholders: brief.internalStakeholders || brief.internal_stakeholders || "",
-      consumerInsight: brief.consumerInsight || brief.consumer_insight || "",
-      rtbFeatures: brief.rtbFeatures || brief.rtb_features || "",
-      keyMessage: brief.keyMessage || brief.key_message || "",
-      valueProposition: brief.valueProposition || brief.value_proposition || "",
-      toneOfVoice: brief.toneOfVoice || brief.tone_of_voice || "",
-      marketCompetition: brief.marketCompetition || brief.market_competition || "",
+      technical_requirements: brief.technicalRequirements || brief.technical_requirements || "",
+      target_audience: brief.targetAudience || brief.target_audience || "",
+      internal_stakeholders: brief.internalStakeholders || brief.internal_stakeholders || "",
+      consumer_insight: brief.consumerInsight || brief.consumer_insight || "",
+      rtb_features: brief.rtbFeatures || brief.rtb_features || "",
+      key_message: brief.keyMessage || brief.key_message || "",
+      value_proposition: brief.valueProposition || brief.value_proposition || "",
+      tone_of_voice: brief.toneOfVoice || brief.tone_of_voice || "",
+      market_competition: brief.marketCompetition || brief.market_competition || "",
       inspirations: brief.inspirations || "",
-      pastCommunication: brief.pastCommunication || brief.past_communication || "",
+      past_communication: brief.pastCommunication || brief.past_communication || "",
       touchpoints: brief.touchpoints || "",
-      finalNotes: brief.finalNotes || brief.final_notes || "",
+      final_notes: brief.finalNotes || brief.final_notes || "",
       links: brief.links || [],
       attachments: brief.attachments || [],
-    })
-    setShowEditWizard(true)
-  }
+    };
+    // Remove id and timestamps
+    delete payload.id;
+    delete payload.date;
+    delete payload.updated_at;
+    delete payload.sent_at;
+    // Add user/org IDs if available
+    if (user?.id) payload.client_id = user.id;
+    if (user?.organization) payload.organization_id = user.organization;
+    try {
+      const res = await fetch('/api/briefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': 'client' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        toast({ title: 'Draft duplicated.' });
+        await fetchBriefs();
+      } else {
+        // Optionally show error toast
+      }
+    } catch {
+      // Optionally show error toast
+    }
+  };
 
   // Update/Edit a sent brief
   const handleUpdate = (brief: any) => {
@@ -218,6 +240,54 @@ export function ClientDashboardEnhanced() {
     })
     setShowEditWizard(true)
   }
+
+  // Fetch full brief data and open wizard for editing
+  const handleContinueWriting = async (brief: any) => {
+    setLoadingBrief(true);
+    try {
+      const briefId = Number(brief.id);
+      const res = await fetch(`/api/briefs/${briefId}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Map server fields to wizard initialData format
+        setEditBriefData({
+          id: data.id,
+          projectName: data.project_name || '',
+          projectType: data.project_type || '',
+          projectDescription: data.project_description || '',
+          businessGoals: data.business_goals || '',
+          communicationGoals: data.communication_goals || '',
+          projectKPI: data.project_kpi || '',
+          challenge: data.challenge || '',
+          timelineExpectations: data.timeline_expectations || '',
+          projectBudget: data.project_budget || '',
+          agencyScope: data.agency_scope || '',
+          mandatories: data.mandatories || '',
+          technicalRequirements: data.technical_requirements || '',
+          targetAudience: data.target_audience || '',
+          internalStakeholders: data.internal_stakeholders || '',
+          consumerInsight: data.consumer_insight || '',
+          rtbFeatures: data.rtb_features || '',
+          keyMessage: data.key_message || '',
+          valueProposition: data.value_proposition || '',
+          toneOfVoice: data.tone_of_voice || '',
+          marketCompetition: data.market_competition || '',
+          inspirations: data.inspirations || '',
+          pastCommunication: data.past_communication || '',
+          touchpoints: data.touchpoints || '',
+          finalNotes: data.final_notes || '',
+          links: data.links || [],
+          attachments: data.attachments || [],
+        });
+        setShowEditWizard(true);
+      } else {
+        // fallback: show error toast or similar
+      }
+    } catch {
+      // fallback: show error toast or similar
+    }
+    setLoadingBrief(false);
+  };
 
   if (!user || user.role !== "client") {
     return (
@@ -434,7 +504,7 @@ export function ClientDashboardEnhanced() {
                                   </TooltipTrigger>
                                   <TooltipContent>Duplicate</TooltipContent>
                                 </Tooltip>
-                                <Button variant="outline" size="sm" onClick={() => { setEditBriefData(brief); setShowEditWizard(true); }}>
+                                <Button variant="outline" size="sm" onClick={() => handleContinueWriting(brief)}>
                                   Continue writing
                                 </Button>
                               </>

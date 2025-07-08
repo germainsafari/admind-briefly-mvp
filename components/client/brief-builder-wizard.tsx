@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast'
 
 interface BriefBuilderWizardProps {
   onClose: () => void
-  initialData?: Partial<BriefData>
+  initialData?: (Partial<BriefData> & { id?: number })
 }
 
 interface BriefData {
@@ -72,6 +72,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
   const { user } = useAuth();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1)
+  const [briefId] = useState(initialData?.id)
   const [briefData, setBriefData] = useState<BriefData>({
     projectName: initialData?.projectName || "",
     projectType: initialData?.projectType || "",
@@ -221,17 +222,34 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     payload.attachments = uploadedFiles
     payload.status = 'Draft';
     try {
-      const res = await fetch('/api/briefs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-user-role': 'client' },
-        body: JSON.stringify(payload),
-      })
-      if (res.ok) {
-        toast({ title: 'Your brief has been saved as a draft.' });
-        window.location.href = '/client';
+      if (briefId) {
+        // Update existing draft
+        const res = await fetch('/api/briefs', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-user-role': 'client' },
+          body: JSON.stringify({ id: briefId, ...payload }),
+        });
+        if (res.ok) {
+          toast({ title: 'Your draft has been updated.' });
+          window.location.href = '/client';
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          setSaveDraftError(errorData.error || 'Failed to update draft.');
+        }
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        setSaveDraftError(errorData.error || 'Failed to save draft.');
+        // Create new draft
+        const res = await fetch('/api/briefs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-user-role': 'client' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          toast({ title: 'Your brief has been saved as a draft.' });
+          window.location.href = '/client';
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          setSaveDraftError(errorData.error || 'Failed to save draft.');
+        }
       }
     } catch (error) {
       setSaveDraftError('Failed to save draft.');
