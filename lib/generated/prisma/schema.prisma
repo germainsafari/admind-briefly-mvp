@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BriefStatus {
+  New
+  Sent
+  Shared
+  Draft
+  Stale
+}
+
+enum ManagerStatus {
+  active
+  invited
+  deactivated
+}
+
+enum ClientStatus {
+  active
+  invited
+  deactivated
+}
+
+enum ProjectType {
+  General
+  Motion
+  Events
+  Web
+  UX_UI_Website
+  Event_Tradeshow
+  Video_Animation
+  Digital_Paid_Campaign
+}
+
+enum UserRole {
+  admin
+  manager
+}
+
+model Organization {
+  id         Int       @id @default(autoincrement())
+  name       String
+  ai_support Boolean   @default(false)
+  managers   Manager[]
+  clients    Client[]
+  briefs     Brief[]
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+}
+
+model Manager {
+  id              Int           @id @default(autoincrement())
+  name            String
+  title           String?
+  avatar          String?
+  email           String?       @unique
+  organization    Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  organization_id Int?
+  status          ManagerStatus @default(active)
+  role            UserRole      @default(manager)
+  briefs          Brief[]       @relation("BriefManagers") // Many-to-many
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+}
+
+model Client {
+  id              Int           @id @default(autoincrement())
+  name            String
+  title           String?
+  avatar          String?
+  email           String?       @unique
+  organization    Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  organization_id Int?
+  status          ClientStatus  @default(active)
+  briefs          Brief[] // All briefs created by this client
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+}
+
+model Brief {
+  id                     Int          @id @default(autoincrement())
+  project_name           String
+  project_type           ProjectType?
+  project_description    String?
+  business_goals         String?
+  communication_goals    String?
+  project_kpi            String?
+  challenge              String?
+  timeline_expectations  String?
+  project_budget         String?
+  agency_scope           String?
+  mandatories            String?
+  technical_requirements String?
+  target_audience        String?
+  internal_stakeholders  String?
+  consumer_insight       String?
+  rtb_features           String?
+  key_message            String?
+  value_proposition      String?
+  tone_of_voice          String?
+  market_competition     String?
+  inspirations           String?
+  past_communication     String?
+  touchpoints            String?
+  final_notes            String?
+  attachments            String[]
+  links                  String[]
+  client                 Client       @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  client_id              Int
+  managers               Manager[]    @relation("BriefManagers") // Many-to-many
+  organization           Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  organization_id        Int
+  status                 BriefStatus  @default(New)
+  progress               Int          @default(0)
+  created_at             DateTime     @default(now())
+  updated_at             DateTime     @updatedAt
+}
