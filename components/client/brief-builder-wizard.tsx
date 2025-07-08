@@ -114,6 +114,26 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
   const [saveDraftError, setSaveDraftError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showStep8CancelConfirm, setShowStep8CancelConfirm] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    // List all text fields to count for progress
+    const textFields = [
+      'projectName', 'projectType', 'projectDescription', 'businessGoals', 'communicationGoals',
+      'projectKPI', 'challenge', 'timelineExpectations', 'projectBudget', 'agencyScope',
+      'mandatories', 'technicalRequirements', 'targetAudience', 'internalStakeholders',
+      'consumerInsight', 'rtbFeatures', 'keyMessage', 'valueProposition', 'toneOfVoice',
+      'marketCompetition', 'inspirations', 'pastCommunication', 'touchpoints', 'finalNotes'
+    ];
+    const totalFields = textFields.length;
+    let filled = 0;
+    textFields.forEach((field) => {
+      if (briefData[field] && typeof briefData[field] === 'string' && briefData[field].trim() !== '') {
+        filled++;
+      }
+    });
+    setProgress(Math.round((filled / totalFields) * 100));
+  }, [briefData]);
 
   const updateBriefData = (field: keyof BriefData, value: any) => {
     setBriefData((prev) => ({ ...prev, [field]: typeof value === 'string' ? value : (value || "") }))
@@ -221,6 +241,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     }
     payload.attachments = uploadedFiles
     payload.status = 'Draft';
+    payload.progress = progress;
     try {
       if (briefId) {
         // Update existing draft
@@ -294,6 +315,7 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     payload.attachments = uploadedFiles
     payload.manager_ids = selectedManagers.map((m: any) => m.id);
     payload.status = 'Sent';
+    payload.progress = progress;
     try {
       const res = await fetch('/api/briefs', {
         method: 'POST',
