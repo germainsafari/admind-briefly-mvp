@@ -128,7 +128,8 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     const totalFields = textFields.length;
     let filled = 0;
     textFields.forEach((field) => {
-      if (briefData[field] && typeof briefData[field] === 'string' && briefData[field].trim() !== '') {
+      const value = briefData[field as keyof BriefData];
+      if (value && typeof value === 'string' && value.trim() !== '') {
         filled++;
       }
     });
