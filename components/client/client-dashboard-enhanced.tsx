@@ -74,6 +74,7 @@ export function ClientDashboardEnhanced() {
   };
 
   const fetchBriefs = async () => {
+    if (!user || !user.id) return;
     try {
       const res = await fetch(`/api/briefs?client_id=${user.id}&page=${currentPage}&limit=${briefsPerPage}`);
       if (!res.ok) {
