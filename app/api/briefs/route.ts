@@ -175,6 +175,35 @@ export async function POST(req: NextRequest) {
     }
 
     const brief = await prisma.brief.create({ data: prismaData, include: { managers: true } });
+
+    // Notification logic: only if status is 'Sent'
+    if (prismaData.status === 'Sent') {
+      // Notify all assigned managers
+      if (Array.isArray(brief.managers)) {
+        await Promise.all(
+          brief.managers.map((manager: any) =>
+            prisma.managerNotification.create({
+              data: {
+                managerId: manager.id,
+                message: `A new brief "${brief.project_name}" has been sent to you!`,
+                link: `/admin/briefs/${brief.id}`,
+              },
+            })
+          )
+        );
+      }
+      // Notify the client
+      if (brief.client_id) {
+        await prisma.clientNotification.create({
+          data: {
+            clientId: brief.client_id,
+            message: `Your brief "${brief.project_name}" was sent successfully!`,
+            link: `/client/brief-success?id=${brief.id}`,
+          },
+        });
+      }
+    }
+
     return NextResponse.json(brief);
   } catch (err) {
     console.error('PRISMA ERROR:', err);

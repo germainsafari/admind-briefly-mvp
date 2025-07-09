@@ -73,6 +73,7 @@ model Manager {
   status         ManagerStatus @default(active)
   role           UserRole      @default(manager)
   briefs         Brief[]      @relation("BriefManagers") // Many-to-many
+  notifications  ManagerNotification[]
   created_at     DateTime     @default(now())
   updated_at     DateTime     @updatedAt
 }
@@ -87,6 +88,7 @@ model Client {
   organization_id Int?
   status         ClientStatus @default(active)
   briefs         Brief[]      // All briefs created by this client
+  notifications  ClientNotification[]
   created_at     DateTime     @default(now())
   updated_at     DateTime     @updatedAt
 }
@@ -128,4 +130,24 @@ model Brief {
   progress              Int          @default(0)
   created_at            DateTime     @default(now())
   updated_at            DateTime     @updatedAt
+}
+
+model ManagerNotification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  manager   Manager  @relation(fields: [managerId], references: [id])
+  managerId Int
+}
+
+model ClientNotification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+  clientId  Int
 }
