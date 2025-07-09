@@ -11,7 +11,7 @@ import { BriefsList } from "./briefs-list"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AddClientModal } from "@/components/manager/add-client-modal"
 import { AddManagerModal } from "./add-manager-modal"
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react";
 
 const summaryCards = [
   {
@@ -41,6 +41,8 @@ const summaryCards = [
 ]
 
 export function AdminDashboard() {
+  const { data: session } = useSession();
+  const user = session?.user as { name?: string };
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showAddManagerModal, setShowAddManagerModal] = useState(false)
   const [showAddClientModal, setShowAddClientModal] = useState(false)
@@ -51,7 +53,6 @@ export function AdminDashboard() {
   const [briefsRefreshKey, setBriefsRefreshKey] = useState(0)
   const [tabCounts, setTabCounts] = useState({ organizations: 0, managers: 0, clients: 0, briefs: 0 })
 
-  const { user } = useAuth();
   const firstName = user?.name?.split(" ")[0] || "Admin";
 
   // Fetch counts from API

@@ -5,14 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useAuth } from "@/lib/auth-context"
-import { useMsGraph } from "@/hooks/useMsGraph"
+import { useSession, signOut } from "next-auth/react";
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 
 export function Header() {
-  const { user, logout } = useAuth()
-  const { session, signOut } = useMsGraph()
+  const { data: session } = useSession();
 
   return (
     <header className="gradient-header">
@@ -85,10 +83,7 @@ export function Header() {
               <DropdownMenuContent align="end" aria-label="User menu">
                 <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    logout()
-                    signOut()
-                  }}
+                  onClick={() => signOut()}
                 >
                   Logout
                 </DropdownMenuItem>

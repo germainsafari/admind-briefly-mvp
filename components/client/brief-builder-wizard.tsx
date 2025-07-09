@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { BriefSummaryStreamlined } from "./brief-summary-streamlined"
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useToast } from '@/hooks/use-toast'
@@ -69,7 +69,9 @@ const steps = [
 ]
 
 export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardProps) {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  // Extend user type to include custom fields, fallback to empty object if session is null
+  const user = (session?.user ?? {}) as typeof session extends { user: infer U } ? U & { organization?: string; role?: string; id?: string | number } : { organization?: string; role?: string; id?: string | number };
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1)
   const [briefId] = useState(initialData?.id)

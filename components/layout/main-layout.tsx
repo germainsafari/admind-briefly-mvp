@@ -3,7 +3,7 @@
 import type React from "react"
 import { Header } from "./header"
 import { motion } from "framer-motion"
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation"
 
 interface MainLayoutProps {
@@ -11,12 +11,12 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const { isAuthenticated, user } = useAuth()
+  const { data: session, status } = useSession();
   const pathname = usePathname()
   const router = useRouter()
 
   // Don't show header/nav on login page
-  if (pathname === "/" || !isAuthenticated) {
+  if (pathname === "/" || status !== "authenticated") {
     return <div className="min-h-screen bg-gray-50">{children}</div>
   }
 

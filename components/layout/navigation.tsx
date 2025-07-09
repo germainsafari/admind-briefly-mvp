@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react";
 
 interface NavigationProps {
   activeRole: "admin" | "manager" | "client"
@@ -13,15 +13,10 @@ interface NavigationProps {
 export function Navigation({ activeRole, onRoleChange }: NavigationProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user } = useAuth()
-
-  const handleRoleChange = (role: "admin" | "manager" | "client") => {
-    onRoleChange(role)
-    router.push(`/${role}`)
-  }
+  const { data: session } = useSession();
 
   // If user is admin, only show admin interface
-  if (user?.role === "admin") {
+  if (session?.user?.role === "admin") {
     return null // No navigation tabs for admin
   }
 
@@ -33,8 +28,8 @@ export function Navigation({ activeRole, onRoleChange }: NavigationProps) {
 
   // Filter tabs based on user role
   const visibleTabs = tabs.filter((tab) => {
-    if (user?.role === "manager") return tab.id === "manager"
-    if (user?.role === "client") return tab.id === "client"
+    if (session?.user?.role === "manager") return tab.id === "manager"
+    if (session?.user?.role === "client") return tab.id === "client"
     return true
   })
 

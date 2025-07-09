@@ -14,8 +14,8 @@ import { BriefBuilderWizard } from "./brief-builder-wizard"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { BriefDetailModal } from "./brief-detail-modal"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useAuth } from "@/lib/auth-context"
 import { useToast } from '@/hooks/use-toast'
+import { useSession } from "next-auth/react";
 
 interface ClientBrief {
   id: string
@@ -32,7 +32,8 @@ interface ClientBrief {
 const briefTypes = ["General", "UX/UI Website", "Event/Tradeshow", "Video/Animation", "Digital Paid Campaign"]
 
 export function ClientDashboardEnhanced() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user as { name?: string; role?: string; organization?: string; id?: string | number };
   const { toast } = useToast();
   const [briefs, setBriefs] = useState<ClientBrief[]>([])
   const [activeTab, setActiveTab] = useState("all")
@@ -308,10 +309,10 @@ export function ClientDashboardEnhanced() {
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center space-x-4">
-          <h1 className="text-5xl font-bold text-text">Hello {user.name.split(" ")[0]}!</h1>
+          <h1 className="text-5xl font-bold text-text">Hello {(user.name?.split(" ")[0]) || "Client"}!</h1>
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar || "/placeholder.svg?height=40&width=40"} />
-            <AvatarFallback>{user.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+            <AvatarImage src={(user as any).avatar || "/placeholder.svg?height=40&width=40"} />
+            <AvatarFallback>{user.name ? user.name.split(" ").map(n => n[0]).join("") : "C"}</AvatarFallback>
           </Avatar>
         </div>
         <p className="text-lg text-text-muted max-w-3xl">

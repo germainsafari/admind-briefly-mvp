@@ -1,12 +1,13 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button"
 import { useMsGraph } from "@/hooks/useMsGraph"
 
 export function DebugUserInfo() {
-  const { user, logout } = useAuth()
-  const { session, signOut, sendEmail, getInbox } = useMsGraph()
+  const { data: session } = useSession();
+  const user = session?.user as { id?: string | number; name?: string; role?: string; organization?: string; email?: string };
+  const { signOut, sendEmail, getInbox } = useMsGraph();
 
   const clearLocalStorage = () => {
     localStorage.removeItem("admind_user")
@@ -34,9 +35,6 @@ export function DebugUserInfo() {
       </div>
       
       <div className="mt-3 space-x-2">
-        <Button variant="outline" size="sm" onClick={logout}>
-          Logout
-        </Button>
         <Button variant="outline" size="sm" onClick={signOut}>
           Sign out (NextAuth)
         </Button>

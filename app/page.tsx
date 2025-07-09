@@ -4,39 +4,26 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { ComputerIcon as Microsoft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { RoleSelectionModal } from "@/components/auth/role-selection-modal"
-import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-import { signIn } from "next-auth/react"
+import { useSession } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { signIn } from "next-auth/react";
 
 export default function HomePage() {
-  const [showRoleModal, setShowRoleModal] = useState(false)
-  const { isAuthenticated, user } = useAuth()
-  const router = useRouter()
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      router.push(`/${user.role}`)
-    }
-  }, [isAuthenticated, user, router])
+    if (status !== "authenticated") return;
+    const role = session?.user?.role;
+    if (!role) return;
+    if (pathname !== "/") return;
+    router.replace(`/${role}`);
+  }, [status, session, router, pathname]);
 
-  const handleMicrosoftLogin = () => {
-    signIn("azure-ad")
-  }
-
-  if (isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-2xl font-bold mb-4">
-            <span className="text-brand-black">Admind_</span>
-            <span className="text-brand-orange">Briefly</span>
-          </div>
-          <p className="text-gray-600">Redirecting to dashboard...</p>
-        </div>
-      </div>
-    )
+  if (status === "loading") {
+    return <div className="flex items-center justify-center min-h-screen text-lg">Loading…</div>;
   }
 
   return (
@@ -65,7 +52,7 @@ export default function HomePage() {
 
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button
-                onClick={handleMicrosoftLogin}
+                onClick={() => signIn("azure-ad")}
                 className="w-full bg-brand-black hover:bg-gray-800 text-white py-4 text-base font-medium"
                 size="lg"
               >
@@ -96,9 +83,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* Role Selection Modal */}
-      <RoleSelectionModal open={showRoleModal} onOpenChange={setShowRoleModal} />
     </div>
-  )
+  );
 }

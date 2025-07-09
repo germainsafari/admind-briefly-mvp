@@ -16,7 +16,7 @@ import { DownloadBriefModal } from "./download-brief-modal"
 import { BriefSummaryPanel } from "./brief-summary-panel"
 import { AddClientModal } from "./add-client-modal"
 import { ClientsList } from "@/components/admin/clients-list"
-import { useAuth } from "@/lib/auth-context"
+import { useSession } from "next-auth/react";
 
 interface Brief {
   id: string
@@ -102,7 +102,8 @@ const mockBriefs: Brief[] = [
 const briefTypes = ["General", "UX/UI Website", "Event/Tradeshow", "Video/Animation", "Digital Paid Campaign"]
 
 export function ManagerDashboardNew() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user as { name?: string; role?: string; organization?: string; id?: string | number };
   const [activeTab, setActiveTab] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
