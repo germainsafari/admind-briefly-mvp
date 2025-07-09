@@ -24,7 +24,7 @@ export function useMsGraph() {
 
   return {
     session,
-    signIn: () => nextSignIn('microsoft'),
+    signIn: () => nextSignIn('azure-ad'),
     signOut: () => nextSignOut(),
     sendEmail,
     getInbox

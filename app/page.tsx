@@ -8,6 +8,7 @@ import { RoleSelectionModal } from "@/components/auth/role-selection-modal"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { signIn } from "next-auth/react"
 
 export default function HomePage() {
   const [showRoleModal, setShowRoleModal] = useState(false)
@@ -21,9 +22,7 @@ export default function HomePage() {
   }, [isAuthenticated, user, router])
 
   const handleMicrosoftLogin = () => {
-    // In a real implementation, this would redirect to Microsoft OAuth
-    // For now, we'll show the role selection modal
-    setShowRoleModal(true)
+    signIn("azure-ad")
   }
 
   if (isAuthenticated) {

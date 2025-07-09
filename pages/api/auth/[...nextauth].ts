@@ -1,16 +1,20 @@
 import NextAuth from "next-auth"
-import MicrosoftProvider from "next-auth/providers/microsoft"
+import AzureADProvider from "next-auth/providers/azure-ad"
 
-const handler = NextAuth({
+console.log({
+  AZURE_AD_CLIENT_ID: process.env.AZURE_AD_CLIENT_ID,
+  AZURE_AD_TENANT_ID: process.env.AZURE_AD_TENANT_ID,
+  AZURE_AD_CLIENT_SECRET: !!process.env.AZURE_AD_CLIENT_SECRET,
+})
+
+export default NextAuth({
   providers: [
-    MicrosoftProvider({
-      clientId: process.env.MICROSOFT_CLIENT_ID!,
-      clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-      tenantId: process.env.MICROSOFT_TENANT_ID,
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID!,
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+      tenantId: process.env.AZURE_AD_TENANT_ID,
       authorization: { params: { scope: 'openid profile offline_access User.Read Mail.Send Mail.Read' } }
     })
   ],
   secret: process.env.NEXTAUTH_SECRET,
 })
-
-export { handler as GET, handler as POST }
