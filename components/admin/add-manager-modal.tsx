@@ -28,7 +28,8 @@ export function AddManagerModal({ open, onOpenChange, onManagerCreated }: AddMan
     if (open) {
       fetch('/api/organizations')
         .then(res => res.json())
-        .then(data => setOrganizations(data))
+        .then(data => setOrganizations(Array.isArray(data.data) ? data.data : []))
+        .catch(() => setOrganizations([]));
     }
   }, [open])
 
@@ -155,7 +156,7 @@ export function AddManagerModal({ open, onOpenChange, onManagerCreated }: AddMan
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent className="card-bg">
-                  {organizations.map((org) => (
+                  {Array.isArray(organizations) && organizations.map((org) => (
                     <SelectItem key={org.id} value={org.id}>
                       <div className="flex items-center space-x-3">
                         <img src={org.logo || "/placeholder.svg"} alt={org.name} className="h-5 w-5" />

@@ -30,7 +30,7 @@ export function DebugUserInfo() {
         <p><strong>ID:</strong> {user.id} (Type: {typeof user.id})</p>
         <p><strong>Name:</strong> {user.name}</p>
         <p><strong>Role:</strong> {user.role}</p>
-        <p><strong>Organization:</strong> {user.organization}</p>
+        <p><strong>Organization:</strong> {user.organizationId}</p>
         <p><strong>Email:</strong> {user.email}</p>
       </div>
       

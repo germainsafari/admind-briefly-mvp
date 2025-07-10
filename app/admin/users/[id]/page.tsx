@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useSession } from "next-auth/react";
 
 function fetchOrganizations() {
   return fetch("/api/organizations").then(res => res.json());
@@ -18,7 +18,8 @@ export default function UserProfilePage({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showEdit, setShowEdit] = useState(false);
-  const { user: currentUser } = useAuth();
+  const { data: session } = useSession();
+  const currentUser = session?.user;
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [deactivateError, setDeactivateError] = useState(null);
@@ -58,7 +59,7 @@ export default function UserProfilePage({ params }) {
               <div className="text-gray-500">Client</div>
               <div className="flex items-center mt-2">
                 <img src={user.organization_logo || "/placeholder-logo.png"} alt="org" className="h-6 w-6 mr-2" />
-                <span>{user.organization_name || user.organization}</span>
+                <span>{user.organization_name || user.organization_id || user.organizationId || user.organization}</span>
               </div>
               <div className="mt-2 text-sm text-gray-500">Email: <span className="font-semibold text-black">{user.email}</span></div>
             </div>
@@ -83,7 +84,7 @@ export default function UserProfilePage({ params }) {
               <div className="text-gray-500">{user.title || user.position}</div>
               <div className="flex items-center mt-2">
                 <img src={user.organization_logo || "/placeholder-logo.png"} alt="org" className="h-6 w-6 mr-2" />
-                <span>{user.organization_name || user.organization}</span>
+                <span>{user.organization_name || user.organization_id || user.organizationId || user.organization}</span>
               </div>
               <div className="mt-2 text-sm">
                 <span className="font-semibold">Status: </span>
@@ -192,7 +193,7 @@ function EditUserModal({ user, orgs, type, onClose, onSave }) {
     name: user.name,
     title: user.title || user.position || "",
     email: user.email,
-    organization: user.organization_id || user.organization,
+    organization: user.organization_id || user.organizationId || user.organization,
     avatar: user.avatar,
   });
   const [saving, setSaving] = useState(false);

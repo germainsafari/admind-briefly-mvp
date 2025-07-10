@@ -116,15 +116,32 @@ export function BriefsList({ onBriefDeleted }: BriefsListProps) {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [typeFilters, setTypeFilters] = useState<string[]>([])
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchBriefs = () => {
     fetch(`/api/briefs?page=${currentPage}&limit=${pageSize}`)
-      .then(res => res.json())
-      .then(({ data, total }) => {
-        setBriefs(data);
-        setTotal(total);
+      .then(async res => {
+        if (!res.ok) {
+          if (res.status === 403) {
+            setError('You do not have permission to view briefs.');
+          } else {
+            setError('Failed to fetch briefs.');
+          }
+          setBriefs([]);
+          setTotal(0);
+          return;
+        }
+        setError(null);
+        const { data, total } = await res.json();
+        setBriefs(Array.isArray(data) ? data : []);
+        setTotal(typeof total === "number" ? total : 0);
       })
+      .catch(() => {
+        setError('Failed to fetch briefs.');
+        setBriefs([]);
+        setTotal(0);
+      });
   }
   useEffect(() => { fetchBriefs() }, [currentPage, pageSize])
 
@@ -180,7 +197,7 @@ export function BriefsList({ onBriefDeleted }: BriefsListProps) {
   }
 
   // Sorting and filtering logic
-  const filteredBriefs = briefs.filter(brief => {
+  const filteredBriefs = (Array.isArray(briefs) ? briefs : []).filter(brief => {
     if (typeFilters.length === 0) return true;
     return typeFilters.includes(brief.project_type || "");
   });
@@ -201,6 +218,11 @@ export function BriefsList({ onBriefDeleted }: BriefsListProps) {
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
       <div className="flex justify-end mb-2">
         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
           <DropdownMenuTrigger asChild>

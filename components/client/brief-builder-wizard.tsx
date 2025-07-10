@@ -71,7 +71,7 @@ const steps = [
 export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardProps) {
   const { data: session } = useSession();
   // Extend user type to include custom fields, fallback to empty object if session is null
-  const user = (session?.user ?? {}) as typeof session extends { user: infer U } ? U & { organization?: string; role?: string; id?: string | number } : { organization?: string; role?: string; id?: string | number };
+  const user = (session?.user ?? {}) as typeof session extends { user: infer U } ? U & { organization?: string; organizationId?: number | string; role?: string; id?: string | number } : { organization?: string; organizationId?: number | string; role?: string; id?: string | number };
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1)
   const [briefId] = useState(initialData?.id)
@@ -192,8 +192,8 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
 
   // Fetch managers for the client's organization
   const fetchManagers = async () => {
-    if (!user?.organization) return;
-    const res = await fetch(`/api/organizations/${user.organization}/managers`);
+    if (!user?.organizationId) return;
+    const res = await fetch(`/api/organizations/${user.organizationId}/managers`);
     if (res.ok) {
       setManagers(await res.json());
     }
@@ -236,8 +236,12 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     if (Array.isArray(payload.links)) {
       payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
     }
-    if (!payload.organization_id && user?.organization) {
-      payload.organization_id = user.organization
+    if (!payload.organization_id) {
+      if (user?.organizationId) {
+        payload.organization_id = Number(user.organizationId);
+      } else if (user?.organization) {
+        payload.organization_id = Number(user.organization);
+      }
     }
     if (user?.role === "client" && user.id) {
       payload.client_id = user.id;
@@ -309,8 +313,12 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
     if (Array.isArray(payload.links)) {
       payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
     }
-    if (!payload.organization_id && user?.organization) {
-      payload.organization_id = user.organization
+    if (!payload.organization_id) {
+      if (user?.organizationId) {
+        payload.organization_id = Number(user.organizationId);
+      } else if (user?.organization) {
+        payload.organization_id = Number(user.organization);
+      }
     }
     if (user?.role === "client" && user.id) {
       payload.client_id = user.id;
@@ -412,8 +420,12 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
         if (Array.isArray(payload.links)) {
           payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
         }
-        if (!payload.organization_id && user?.organization) {
-          payload.organization_id = user.organization
+        if (!payload.organization_id) {
+          if (user?.organizationId) {
+            payload.organization_id = Number(user.organizationId);
+          } else if (user?.organization) {
+            payload.organization_id = Number(user.organization);
+          }
         }
         if (user?.role === "client" && user.id) {
           payload.client_id = user.id;
@@ -1022,8 +1034,12 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                   if (Array.isArray(payload.links)) {
                     payload.links = payload.links.filter((link: string) => link && link.trim() !== "");
                   }
-                  if (!payload.organization_id && user?.organization) {
-                    payload.organization_id = user.organization
+                  if (!payload.organization_id) {
+                    if (user?.organizationId) {
+                      payload.organization_id = Number(user.organizationId);
+                    } else if (user?.organization) {
+                      payload.organization_id = Number(user.organization);
+                    }
                   }
                   if (user?.role === "client" && user.id) {
                     payload.client_id = user.id;

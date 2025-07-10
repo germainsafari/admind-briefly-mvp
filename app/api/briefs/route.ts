@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
 
 export async function GET(req: NextRequest) {
+  // Get session from request
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { role, organizationId } = session.user as any;
+
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '10', 10);
@@ -10,8 +19,16 @@ export async function GET(req: NextRequest) {
   const clientId = searchParams.get('client_id');
 
   const where: any = {};
-  if (clientId) {
-    where.client_id = Number(clientId);
+
+  if (role === 'admin') {
+    where.status = 'Sent';
+  } else if (role === 'manager') {
+    where.organization_id = organizationId;
+    where.status = 'Sent';
+  } else if (role === 'client') {
+    where.organization_id = organizationId;
+  } else {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const [briefs, total] = await Promise.all([

@@ -20,8 +20,10 @@ export function Header() {
       if (!session?.user) return;
       let url = "";
       if ((session.user as any).role === "manager") {
+        if (!(session.user as any).id) return;
         url = `/api/notifications?managerId=${(session.user as any).id}`;
       } else if ((session.user as any).role === "client") {
+        if (!(session.user as any).id) return;
         url = `/api/notifications?clientId=${(session.user as any).id}`;
       } else {
         setNotifications([]);
@@ -50,6 +52,11 @@ export function Header() {
     setNotifications((prev) => prev.map(n => n.id === id ? { ...n, read: true } : n));
     setUnreadCount((prev) => Math.max(0, prev - 1));
   };
+
+  // Add a type guard for user with role
+  function hasRole(user: any): user is { role: string } {
+    return user && typeof user.role === 'string';
+  }
 
   return (
     <header className="gradient-header">
@@ -131,9 +138,31 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" aria-label="User menu">
-                <DropdownMenuItem>Profile</DropdownMenuItem>
+                {hasRole(session?.user) && session.user.role === 'admin' && (
+                  <Link href="/admin/profile" passHref legacyBehavior>
+                    <DropdownMenuItem asChild>Profile</DropdownMenuItem>
+                  </Link>
+                )}
+                {hasRole(session?.user) && session.user.role === 'client' && (
+                  <Link href="/client/profile" passHref legacyBehavior>
+                    <DropdownMenuItem asChild>Profile</DropdownMenuItem>
+                  </Link>
+                )}
+                {hasRole(session?.user) && session.user.role === 'manager' && (
+                  <Link href="/manager/profile" passHref legacyBehavior>
+                    <DropdownMenuItem asChild>Profile</DropdownMenuItem>
+                  </Link>
+                )}
+                {!hasRole(session?.user) && session?.user && (
+                  <Link href="/profile" passHref legacyBehavior>
+                    <DropdownMenuItem asChild>Profile</DropdownMenuItem>
+                  </Link>
+                )}
+                {!hasRole(session?.user) && (
+                  <DropdownMenuItem disabled>No profile available</DropdownMenuItem>
+                )}
                 <DropdownMenuItem
-                  onClick={() => signOut()}
+                  onClick={() => signOut({ callbackUrl: '/' })}
                 >
                   Logout
                 </DropdownMenuItem>

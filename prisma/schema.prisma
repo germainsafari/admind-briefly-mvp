@@ -51,6 +51,16 @@ enum UserRole {
   manager
 }
 
+model User {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  role           String   // 'admin', 'manager', 'client'
+  organization   Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  organization_id Int?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+}
+
 model Organization {
   id           Int        @id @default(autoincrement())
   name         String
@@ -58,6 +68,7 @@ model Organization {
   managers     Manager[]
   clients      Client[]
   briefs       Brief[]
+  users        User[]
   created_at   DateTime   @default(now())
   updated_at   DateTime   @updatedAt
 }

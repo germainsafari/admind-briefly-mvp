@@ -1,5 +1,6 @@
 import NextAuth from "next-auth"
 import AzureADProvider from "next-auth/providers/azure-ad"
+import { prisma } from "@/lib/prisma";
 
 function decodeJwt(token: string) {
   if (!token) return {};
@@ -17,7 +18,7 @@ console.log({
   AZURE_AD_CLIENT_SECRET: !!process.env.AZURE_AD_CLIENT_SECRET,
 })
 
-export default NextAuth({
+export const authOptions = {
   providers: [
     AzureADProvider({
       clientId: process.env.AZURE_AD_CLIENT_ID!,
@@ -28,21 +29,29 @@ export default NextAuth({
   ],
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account, profile }: { token: any; account?: any; profile?: any }) {
+      // On first sign-in, look up user in DB and attach role/orgId
       if (account && account.id_token) {
         const payload = decodeJwt(account.id_token);
-        if (payload.roles) {
-          token.role = Array.isArray(payload.roles)
-            ? String(payload.roles[0]).toLowerCase()
-            : String(payload.roles).toLowerCase();
-        }
+        const email = payload.preferred_username || payload.email || payload.upn;
+        if (!email) throw new Error('No email found in Azure AD token');
+        // Look up user in User table
+        const dbUser = await prisma.user.findUnique({ where: { email } });
+        if (!dbUser) throw new Error('User not found in system. Please contact your admin.');
+        token.role = dbUser.role;
+        token.organizationId = dbUser.organization_id;
+        token.email = dbUser.email;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (!session.user) session.user = {};
       (session.user as any).role = token.role;
+      (session.user as any).organizationId = token.organizationId;
+      (session.user as any).email = token.email;
       return session;
     }
   }
-})
+};
+
+export default NextAuth(authOptions);

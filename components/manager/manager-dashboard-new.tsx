@@ -129,10 +129,9 @@ export function ManagerDashboardNew() {
     })
   }, [])
 
-  // Filtering
+  // Filtering (remove org/status filtering, only filter by UI tab/type)
   const filteredBriefs = briefs.filter((brief: any) => {
     if (activeTab === "new" && brief.status !== "New") return false;
-    // Support both 'type' and 'project_type' fields
     const briefType = brief.type || brief.project_type;
     if (selectedTypes.length > 0 && !selectedTypes.includes(briefType)) return false;
     return true;

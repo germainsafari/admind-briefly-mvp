@@ -77,9 +77,8 @@ export function ClientDashboardEnhanced() {
   };
 
   const fetchBriefs = async () => {
-    if (!user || !user.id) return;
     try {
-      const res = await fetch(`/api/briefs?client_id=${user.id}&page=${currentPage}&limit=${briefsPerPage}`);
+      const res = await fetch(`/api/briefs?page=${currentPage}&limit=${briefsPerPage}`);
       if (!res.ok) {
         setBriefs([]);
         setTotalBriefs(0);
@@ -213,7 +212,7 @@ export function ClientDashboardEnhanced() {
     delete payload.sent_at;
     // Add user/org IDs if available
     if (user?.id) payload.client_id = user.id;
-    if (user?.organization) payload.organization_id = user.organization;
+    if (user?.organizationId) payload.organization_id = Number(user.organizationId);
     try {
       const res = await fetch('/api/briefs', {
         method: 'POST',

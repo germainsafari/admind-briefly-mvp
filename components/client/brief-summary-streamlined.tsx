@@ -198,7 +198,7 @@ export function BriefSummaryStreamlined({ data = {}, onBack, onSubmit, onSaveAnd
 
       {/* Modals */}
       <BriefDetailModal open={showDetailModal} onOpenChange={setShowDetailModal} brief={data} />
-      <ShareBriefModal open={showShareModal} onOpenChange={setShowShareModal} onSubmit={handleSubmitBrief} organizationId={user.organization} />
+      <ShareBriefModal open={showShareModal} onOpenChange={setShowShareModal} onSubmit={handleSubmitBrief} organizationId={user.organizationId} />
     </div>
   )
 }
