@@ -20,21 +20,26 @@ export function Header() {
       if (!session?.user) return;
       let url = "";
       if ((session.user as any).role === "manager") {
-        if (!(session.user as any).id) return;
-        url = `/api/notifications?managerId=${(session.user as any).id}`;
+        // For managers, use the managerId from session
+        if (!(session.user as any).managerId) return;
+        url = `/api/notifications?managerId=${(session.user as any).managerId}`;
       } else if ((session.user as any).role === "client") {
-        if (!(session.user as any).id) return;
-        url = `/api/notifications?clientId=${(session.user as any).id}`;
+        // For clients, use the clientId from session
+        if (!(session.user as any).clientId) return;
+        url = `/api/notifications?clientId=${(session.user as any).clientId}`;
       } else {
         setNotifications([]);
         setUnreadCount(0);
         return;
       }
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data);
-        setUnreadCount(data.filter((n: any) => !n.read).length);
+      
+      if (url) {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data);
+          setUnreadCount(data.filter((n: any) => !n.read).length);
+        }
       }
     };
     fetchNotifications();
@@ -123,28 +128,37 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* User Menu */}
+            {/* User Menu - Custom for client */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-2 px-3">
+                <Button variant="ghost" className="flex items-center space-x-2 px-3 focus-visible:ring-2 focus-visible:ring-brand-orange" aria-haspopup="menu" aria-label="Open user menu">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={session?.user?.image || "/placeholder.svg?height=32&width=32"} />
                     <AvatarFallback>{session?.user?.name?.split(" ").map(n => n[0]).join("") || "U"}</AvatarFallback>
                   </Avatar>
-                  <div className="text-left">
-                    <div className="text-sm font-medium">{session?.user?.name || "User"}</div>
-                    <div className="text-xs text-gray-500">{session?.user?.email || ""}</div>
+                  <div className="flex flex-col items-start min-w-0 max-w-[120px] truncate">
+                    <span className="text-sm font-medium truncate">{session?.user?.name || "User"}</span>
+                    {(session?.user as any)?.role === 'client' && (
+                      <span className="text-xs text-gray-500 truncate">{(session?.user as any)?.organization_name || (session?.user as any)?.organizationId || (session?.user as any)?.organization || ""}</span>
+                    )}
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" aria-label="User menu">
+                {/* Only show these for client role */}
+                {hasRole(session?.user) && session.user.role === 'client' && (
+                  <>
+                    <Link href="/client/profile" passHref legacyBehavior>
+                      <DropdownMenuItem asChild>Profile</DropdownMenuItem>
+                    </Link>
+                    <Link href="/onboarding" passHref legacyBehavior>
+                      <DropdownMenuItem asChild>Onboarding</DropdownMenuItem>
+                    </Link>
+                  </>
+                )}
+                {/* Fallback for other roles (unchanged) */}
                 {hasRole(session?.user) && session.user.role === 'admin' && (
                   <Link href="/admin/profile" passHref legacyBehavior>
-                    <DropdownMenuItem asChild>Profile</DropdownMenuItem>
-                  </Link>
-                )}
-                {hasRole(session?.user) && session.user.role === 'client' && (
-                  <Link href="/client/profile" passHref legacyBehavior>
                     <DropdownMenuItem asChild>Profile</DropdownMenuItem>
                   </Link>
                 )}

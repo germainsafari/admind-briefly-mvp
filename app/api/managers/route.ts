@@ -3,6 +3,27 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const email = searchParams.get('email');
+  
+  // If email is provided, filter by email
+  if (email) {
+    const manager = await prisma.manager.findFirst({
+      where: { 
+        email: email,
+        role: 'manager' 
+      },
+      include: { organization: { select: { name: true } } },
+    });
+    
+    if (!manager) {
+      return NextResponse.json({ data: [], total: 0 });
+    }
+    
+    const result = { ...manager, organization_name: manager.organization?.name || null };
+    return NextResponse.json({ data: [result], total: 1 });
+  }
+  
+  // Otherwise, return paginated list
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '10', 10);
   const skip = (page - 1) * limit;

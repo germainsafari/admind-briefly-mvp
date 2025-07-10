@@ -62,6 +62,16 @@ export const authOptions = {
             console.error(`Failed to find or create client for user: ${email}`);
           }
         }
+        // If user is a manager, look up Manager record and store managerId
+        else if (dbUser.role === 'manager') {
+          let manager = await prisma.manager.findUnique({ where: { email } });
+          if (manager) {
+            token.managerId = manager.id;
+            console.log(`Set managerId in token: ${manager.id} for user: ${email}`);
+          } else {
+            console.error(`Failed to find manager for user: ${email}`);
+          }
+        }
       }
       return token;
     },
@@ -75,8 +85,21 @@ export const authOptions = {
       session.user.role = token.role;
       session.user.organizationId = token.organizationId;
       session.user.clientId = token.clientId;
+      session.user.managerId = token.managerId;
       session.user.email = token.email;
-      
+
+      // Add organization_name for client users
+      if (token.role === 'client' && token.organizationId) {
+        // Defensive: only fetch if not already present
+        if (!session.user.organization_name) {
+          const org = await prisma.organization.findUnique({
+            where: { id: token.organizationId },
+            select: { name: true }
+          });
+          session.user.organization_name = org?.name || '';
+        }
+      }
+
       console.log('Session callback - token:', token);
       console.log('Session callback - session.user:', session.user);
       return session;
