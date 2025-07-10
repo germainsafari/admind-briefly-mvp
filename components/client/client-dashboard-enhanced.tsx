@@ -15,6 +15,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { BriefDetailModal } from "./brief-detail-modal"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from '@/hooks/use-toast'
+import { ClientDashboardSearch } from "./client-dashboard-search"
 import { useSession } from "next-auth/react";
 
 interface ClientBrief {
@@ -212,7 +213,7 @@ export function ClientDashboardEnhanced() {
     delete payload.sent_at;
     // Add user/org IDs if available
     if (user?.id) payload.client_id = user.id;
-    if (user?.organizationId) payload.organization_id = Number(user.organizationId);
+    if (user?.organization) payload.organization_id = Number(user.organization);
     try {
       const res = await fetch('/api/briefs', {
         method: 'POST',
@@ -318,6 +319,11 @@ export function ClientDashboardEnhanced() {
           Fill out briefs quickly and intuitively. Share them with your team or download everything directly — all in
           one place.
         </p>
+        
+        {/* Search Bar */}
+        <div className="max-w-2xl">
+          <ClientDashboardSearch />
+        </div>
       </div>
 
       <div className="flex gap-8">

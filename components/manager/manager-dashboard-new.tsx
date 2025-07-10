@@ -16,6 +16,7 @@ import { DownloadBriefModal } from "./download-brief-modal"
 import { BriefSummaryPanel } from "./brief-summary-panel"
 import { AddClientModal } from "./add-client-modal"
 import { ClientsList } from "@/components/admin/clients-list"
+import { ManagerDashboardSearch } from "./manager-dashboard-search"
 import { useSession } from "next-auth/react";
 
 interface Brief {
@@ -221,6 +222,11 @@ export function ManagerDashboardNew() {
           Here, you're in charge of managing briefs — reviewing, organizing, and keeping everything on track. Stay on
           top of submissions, collaborate with your team, and ensure every brief gets the attention it deserves.
         </p>
+        
+        {/* Search Bar */}
+        <div className="max-w-2xl">
+          <ManagerDashboardSearch />
+        </div>
       </div>
 
       <div className="flex gap-8">

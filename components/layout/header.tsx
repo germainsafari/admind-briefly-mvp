@@ -1,12 +1,12 @@
 "use client"
 
-import { Bell, Search } from "lucide-react"
+import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useSession, signOut } from "next-auth/react";
-import { Input } from "@/components/ui/input"
+import { SearchComponent } from "@/components/ui/search"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
@@ -78,11 +78,11 @@ export function Header() {
           {/* Right side */}
           <div className="flex items-center space-x-4">
             {/* Search */}
-            <div className="hidden md:flex relative">
-              <Input placeholder="Search" className="w-80 bg-white/80 border-white/20 placeholder:text-gray-500" />
-              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
-                <Search className="h-4 w-4" />
-              </Button>
+            <div className="hidden md:flex">
+              <SearchComponent 
+                placeholder="Search organizations, managers, clients, briefs..." 
+                className="w-80 bg-white/80 border-white/20 placeholder:text-gray-500" 
+              />
             </div>
 
             {/* Notifications */}

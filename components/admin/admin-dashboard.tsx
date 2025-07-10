@@ -11,6 +11,7 @@ import { BriefsList } from "./briefs-list"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AddClientModal } from "@/components/manager/add-client-modal"
 import { AddManagerModal } from "./add-manager-modal"
+import { AdminDashboardSearch } from "./admin-dashboard-search"
 import { useSession } from "next-auth/react";
 
 const summaryCards = [
@@ -78,6 +79,11 @@ export function AdminDashboard() {
           Your first step is to create an organization — this is where your clients will complete their briefs. Manage
           the structure, invite users, and set up a workspace tailored to your team's needs.
         </p>
+        
+        {/* Search Bar */}
+        <div className="max-w-2xl">
+          <AdminDashboardSearch />
+        </div>
       </div>
 
       {/* Tabs */}

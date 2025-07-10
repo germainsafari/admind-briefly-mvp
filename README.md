@@ -10,6 +10,10 @@ Admind_Briefly is a creative brief management platform designed to streamline th
 - **Brief Management**: View, edit, and manage briefs.
 - **Organization Management**: Admins can manage organizations, clients, and managers.
 - **Sharing and Collaboration**: Share briefs with team members and stakeholders.
+- **Advanced Search**: Role-based search functionality across all entities:
+  - **Admin**: Search organizations, managers, clients, and briefs with filtering options
+  - **Manager**: Search clients and briefs within their organization
+  - **Client**: Search their own briefs
 - **Modern UI**: Built with React, Next.js, Tailwind CSS, and Radix UI for a responsive and accessible experience.
 
 ## Tech Stack
@@ -20,6 +24,33 @@ Admind_Briefly is a creative brief management platform designed to streamline th
 - **Auth**: NextAuth.js (Microsoft OAuth)
 - **Cloud Storage**: Azure Blob Storage
 - **Package Manager**: pnpm (preferred)
+
+## Search Implementation
+
+The search functionality is implemented with role-based access control:
+
+### API Endpoint
+- **Route**: `/api/search`
+- **Method**: GET
+- **Parameters**: 
+  - `q`: Search query (required)
+  - `type`: Entity type filter (`all`, `organizations`, `managers`, `clients`, `briefs`)
+
+### Search Components
+- **Global Search**: `components/ui/search.tsx` - Reusable search component used in header
+- **Admin Search**: `components/admin/admin-dashboard-search.tsx` - Advanced search with filters
+- **Manager Search**: `components/manager/manager-dashboard-search.tsx` - Client and brief search
+- **Client Search**: `components/client/client-dashboard-search.tsx` - Brief-only search
+
+### Features
+- **Debounced Search**: 300ms delay to prevent excessive API calls
+- **Real-time Results**: Live search with dropdown results
+- **Type Filtering**: Filter by entity type (admin only)
+- **Role-based Access**: Users can only search entities they have access to
+- **Keyboard Navigation**: Full keyboard support for accessibility
+- **Click Outside**: Results close when clicking outside
+- **Loading States**: Visual feedback during search
+- **Error Handling**: Graceful error handling with user feedback
 
 ## Getting Started
 
