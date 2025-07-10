@@ -71,7 +71,22 @@ const steps = [
 export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardProps) {
   const { data: session } = useSession();
   // Extend user type to include custom fields, fallback to empty object if session is null
-  const user = (session?.user ?? {}) as typeof session extends { user: infer U } ? U & { organization?: string; organizationId?: number | string; role?: string; id?: string | number } : { organization?: string; organizationId?: number | string; role?: string; id?: string | number };
+  const user = (session?.user ?? {}) as typeof session extends { user: infer U } ? U & { organization?: string; organizationId?: number | string; role?: string; id?: string | number; clientId?: number; email?: string } : { organization?: string; organizationId?: number | string; role?: string; id?: string | number; clientId?: number; email?: string };
+  
+  // Debug logging
+  console.log('Session user object:', user);
+  
+  // Test function to check session
+  const testSession = async () => {
+    try {
+      const response = await fetch('/api/debug-session');
+      const data = await response.json();
+      console.log('Debug session response:', data);
+    } catch (error) {
+      console.error('Error testing session:', error);
+    }
+  };
+  
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1)
   const [briefId] = useState(initialData?.id)
@@ -243,8 +258,15 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
         payload.organization_id = Number(user.organization);
       }
     }
-    if (user?.role === "client" && user.id) {
-      payload.client_id = user.id;
+    if (user?.role === "client" && user.clientId) {
+      payload.client_id = user.clientId;
+    } else if (user?.role === "client" && user.email) {
+      // Fallback: use email to look up client
+      payload.client_email = user.email;
+    } else {
+      console.error('No clientId or email available for client user:', user);
+      setSaveDraftError('Unable to identify client. Please try logging out and back in.');
+      return;
     }
     payload.attachments = uploadedFiles
     payload.status = 'Draft';
@@ -320,8 +342,15 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
         payload.organization_id = Number(user.organization);
       }
     }
-    if (user?.role === "client" && user.id) {
-      payload.client_id = user.id;
+    if (user?.role === "client" && user.clientId) {
+      payload.client_id = user.clientId;
+    } else if (user?.role === "client" && user.email) {
+      // Fallback: use email to look up client
+      payload.client_email = user.email;
+    } else {
+      console.error('No clientId or email available for client user:', user);
+      setSubmitError('Unable to identify client. Please try logging out and back in.');
+      return;
     }
     payload.attachments = uploadedFiles
     payload.manager_ids = selectedManagers.map((m: any) => m.id);
@@ -427,8 +456,15 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
             payload.organization_id = Number(user.organization);
           }
         }
-        if (user?.role === "client" && user.id) {
-          payload.client_id = user.id;
+        if (user?.role === "client" && user.clientId) {
+          payload.client_id = user.clientId;
+        } else if (user?.role === "client" && user.email) {
+          // Fallback: use email to look up client
+          payload.client_email = user.email;
+        } else {
+          console.error('No clientId or email available for client user:', user);
+          setSubmitError('Unable to identify client. Please try logging out and back in.');
+          return;
         }
         payload.attachments = uploadedFiles
         if (recipient.managerId) {
@@ -509,6 +545,9 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
             <Button variant="outline" className="w-full justify-start bg-transparent" size="sm" onClick={() => setShowCancelConfirm(true)}>
               <X className="h-4 w-4 mr-2" />
               Cancel
+            </Button>
+            <Button variant="outline" className="w-full justify-start bg-transparent" size="sm" onClick={testSession}>
+              Debug Session
             </Button>
           </div>
         </div>
@@ -1041,8 +1080,15 @@ export function BriefBuilderWizard({ onClose, initialData }: BriefBuilderWizardP
                       payload.organization_id = Number(user.organization);
                     }
                   }
-                  if (user?.role === "client" && user.id) {
-                    payload.client_id = user.id;
+                  if (user?.role === "client" && user.clientId) {
+                    payload.client_id = user.clientId;
+                  } else if (user?.role === "client" && user.email) {
+                    // Fallback: use email to look up client
+                    payload.client_email = user.email;
+                  } else {
+                    console.error('No clientId or email available for client user:', user);
+                    setSubmitError('Unable to identify client. Please try logging out and back in.');
+                    return;
                   }
                   payload.attachments = uploadedFiles
                   if (recipient.managerId) {

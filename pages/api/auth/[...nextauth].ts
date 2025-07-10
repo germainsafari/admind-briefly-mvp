@@ -41,14 +41,44 @@ export const authOptions = {
         token.role = dbUser.role;
         token.organizationId = dbUser.organization_id;
         token.email = dbUser.email;
+        // If user is a client, look up Client record and store clientId
+        if (dbUser.role === 'client') {
+          let client = await prisma.client.findUnique({ where: { email } });
+          if (!client) {
+            // Create a Client record if it doesn't exist
+            client = await prisma.client.create({
+              data: {
+                name: dbUser.email?.split('@')[0] || 'Client', // Use email prefix as name
+                email: dbUser.email,
+                organization_id: dbUser.organization_id,
+                status: 'active'
+              }
+            });
+          }
+          if (client) {
+            token.clientId = client.id;
+            console.log(`Set clientId in token: ${client.id} for user: ${email}`);
+          } else {
+            console.error(`Failed to find or create client for user: ${email}`);
+          }
+        }
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
-      if (!session.user) session.user = {};
-      (session.user as any).role = token.role;
-      (session.user as any).organizationId = token.organizationId;
-      (session.user as any).email = token.email;
+      // Ensure session.user exists
+      if (!session.user) {
+        session.user = {};
+      }
+      
+      // Add custom fields to session
+      session.user.role = token.role;
+      session.user.organizationId = token.organizationId;
+      session.user.clientId = token.clientId;
+      session.user.email = token.email;
+      
+      console.log('Session callback - token:', token);
+      console.log('Session callback - session.user:', session.user);
       return session;
     }
   }

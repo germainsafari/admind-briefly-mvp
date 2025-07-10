@@ -133,20 +133,35 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle client_id
-    const clientId = data.client_id !== undefined ? parseInt(data.client_id, 10) : undefined;
-    if (data.client_id !== undefined && Number.isNaN(clientId)) {
-      throw new Error('client_id must be numeric');
-    }
-    if (clientId !== undefined) {
-      const clientExists = await prisma.client.findUnique({ where: { id: clientId } });
-      if (!clientExists) {
-        return NextResponse.json({ error: 'Client not found for provided client_id' }, { status: 400 });
+    let clientId: number | undefined;
+    
+    if (data.client_id !== undefined) {
+      clientId = parseInt(data.client_id, 10);
+      if (Number.isNaN(clientId)) {
+        throw new Error('client_id must be numeric');
       }
+    } else if (data.client_email) {
+      // Fallback: look up client by email
+      const client = await prisma.client.findUnique({ where: { email: data.client_email } });
+      if (client) {
+        clientId = client.id;
+      }
+    }
+    
+    // Validate that client_id is provided and valid
+    if (!clientId) {
+      return NextResponse.json({ error: 'client_id or client_email is required and must correspond to a valid Client record.' }, { status: 400 });
+    }
+    
+    const clientExists = await prisma.client.findUnique({ where: { id: clientId } });
+    if (!clientExists) {
+      return NextResponse.json({ error: 'Client not found for provided client_id' }, { status: 400 });
     }
 
     // Remove raw IDs from data before spreading
     delete data.organization_id;
     delete data.client_id;
+    delete data.client_email;
     delete data.creator_id;
     delete data.manager_id;
     // delete data.manager_ids; // Don't delete, we need it below

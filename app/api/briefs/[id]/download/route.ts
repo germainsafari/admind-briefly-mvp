@@ -29,7 +29,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const brief = await prisma.brief.findUnique({
     where: { id: Number(id) },
     include: {
-      creator: { select: { name: true, email: true } },
       client: { select: { name: true, email: true } },
       organization: { select: { name: true } },
     },
@@ -122,7 +121,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   // Meta
   section('Meta');
-  drawField('Creator', brief.creator?.name);
+  drawField('Creator', brief.client?.name);
   drawField('Client', brief.client?.name);
   drawField('Organization', brief.organization?.name);
   drawField('Created At', brief.created_at);
