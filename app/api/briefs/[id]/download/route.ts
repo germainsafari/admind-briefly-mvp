@@ -4,7 +4,11 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 function wrapText(text: string, maxWidth: number, font: any, fontSize: number) {
   if (!text) return [''];
-  const words = text.split(' ');
+  
+  // Clean the text by replacing newlines with spaces and removing extra whitespace
+  const cleanText = text.replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  const words = cleanText.split(' ');
   let lines = [];
   let currentLine = '';
   for (let word of words) {
