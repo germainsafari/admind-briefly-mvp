@@ -138,41 +138,48 @@ export function Header() {
                   </Avatar>
                   <div className="flex flex-col items-start min-w-0 max-w-[120px] truncate">
                     <span className="text-sm font-medium truncate">{session?.user?.name || "User"}</span>
-                    {(session?.user as any)?.role === 'client' && (
-                      <span className="text-xs text-gray-500 truncate">{(session?.user as any)?.organization_name || (session?.user as any)?.organizationId || (session?.user as any)?.organization || ""}</span>
-                    )}
+                    <span className="text-xs text-gray-500 truncate">
+                      {(session?.user as any)?.organization_name || 
+                       (session?.user as any)?.organization || 
+                       ((session?.user as any)?.role === 'admin' ? 'Admind Agency' : '')}
+                    </span>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" aria-label="User menu">
-                {/* Only show these for client role */}
-                {hasRole(session?.user) && session.user.role === 'client' && (
+                {/* Show Profile and Onboarding for all roles */}
+                {(session?.user as any)?.role === 'admin' && (
                   <>
-                    <Link href="/client/profile" passHref legacyBehavior>
-                      <DropdownMenuItem asChild>Profile</DropdownMenuItem>
-                    </Link>
-                    <Link href="/onboarding" passHref legacyBehavior>
-                      <DropdownMenuItem asChild>Onboarding</DropdownMenuItem>
-                    </Link>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/profile">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/onboarding">Onboarding</Link>
+                    </DropdownMenuItem>
                   </>
                 )}
-                {/* Fallback for other roles (unchanged) */}
-                {hasRole(session?.user) && session.user.role === 'admin' && (
-                  <Link href="/admin/profile" passHref legacyBehavior>
-                    <DropdownMenuItem asChild>Profile</DropdownMenuItem>
-                  </Link>
+                {(session?.user as any)?.role === 'manager' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/manager/profile">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/onboarding">Onboarding</Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
-                {hasRole(session?.user) && session.user.role === 'manager' && (
-                  <Link href="/manager/profile" passHref legacyBehavior>
-                    <DropdownMenuItem asChild>Profile</DropdownMenuItem>
-                  </Link>
+                {(session?.user as any)?.role === 'client' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/client/profile">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/onboarding">Onboarding</Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
-                {!hasRole(session?.user) && session?.user && (
-                  <Link href="/profile" passHref legacyBehavior>
-                    <DropdownMenuItem asChild>Profile</DropdownMenuItem>
-                  </Link>
-                )}
-                {!hasRole(session?.user) && (
+                {/* Fallback for users without role */}
+                {!session?.user && (
                   <DropdownMenuItem disabled>No profile available</DropdownMenuItem>
                 )}
                 <DropdownMenuItem

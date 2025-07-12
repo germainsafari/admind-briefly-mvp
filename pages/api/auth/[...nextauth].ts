@@ -88,8 +88,8 @@ export const authOptions = {
       session.user.managerId = token.managerId;
       session.user.email = token.email;
 
-      // Add organization_name for client users
-      if (token.role === 'client' && token.organizationId) {
+      // Add organization_name for all users with organizationId
+      if (token.organizationId) {
         // Defensive: only fetch if not already present
         if (!session.user.organization_name) {
           const org = await prisma.organization.findUnique({
