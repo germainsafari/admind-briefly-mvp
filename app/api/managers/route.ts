@@ -48,6 +48,10 @@ export async function POST(req: NextRequest) {
     if (!data.name || !data.email || !data.organization) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
     }
+    
+    // Get the creating manager's ID from headers
+    const creatingManagerId = req.headers.get('x-manager-id');
+    
     // Find organization by id or name
     let org = null;
     if (!isNaN(Number(data.organization))) {
@@ -71,6 +75,11 @@ export async function POST(req: NextRequest) {
         // Add phone if your schema supports it
       }
     });
+
+    // Send notifications
+    const { NotificationService } = await import('@/lib/notification-service');
+    await NotificationService.handleManagerCreated(manager, creatingManagerId ? Number(creatingManagerId) : undefined);
+
     return NextResponse.json(manager, { status: 201 });
   } catch (err) {
     console.error('Error creating manager:', err);

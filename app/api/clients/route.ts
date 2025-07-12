@@ -27,6 +27,10 @@ export async function POST(req: NextRequest) {
     if (!name || !email || !organization) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    
+    // Get the creating manager's ID from headers
+    const creatingManagerId = req.headers.get('x-manager-id');
+    
     const client = await prisma.client.create({
       data: {
         name,
@@ -37,8 +41,14 @@ export async function POST(req: NextRequest) {
       },
       include: { organization: { select: { name: true } } },
     });
+    
     // Flatten organization_name for compatibility
     const result = { ...client, organization_name: client.organization?.name || null };
+
+    // Send notifications
+    const { NotificationService } = await import('@/lib/notification-service');
+    await NotificationService.handleClientCreated(client, creatingManagerId ? Number(creatingManagerId) : undefined);
+
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create client', details: (error as any)?.message }, { status: 500 });

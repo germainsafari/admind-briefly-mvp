@@ -33,6 +33,11 @@ export async function POST(req: NextRequest) {
     if (!data.name || typeof data.name !== 'string' || !data.name.trim()) {
       return NextResponse.json({ error: 'Organization name is required.' }, { status: 400 });
     }
+    
+    // Get the creating manager's ID from headers or session
+    const userRole = req.headers.get('x-user-role');
+    const creatingManagerId = userRole === 'admin' ? req.headers.get('x-manager-id') : null;
+    
     // Only 'name' is saved for now, as per schema
     const org = await prisma.organization.create({
       data: {
@@ -40,6 +45,11 @@ export async function POST(req: NextRequest) {
         // ai_support and other fields can be added here if needed
       },
     });
+
+    // Send notifications
+    const { NotificationService } = await import('@/lib/notification-service');
+    await NotificationService.handleOrganizationCreated(org, creatingManagerId ? Number(creatingManagerId) : undefined);
+
     return NextResponse.json(org, { status: 201 });
   } catch (err) {
     console.error('Error creating organization:', err);
